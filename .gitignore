@@ -5,7 +5,10 @@ venv/
 
 # Python compiled file
 __pycache__/
-*.py
+
+# Logs
+*.Log
+.logs/
 
 # VScode
 .vscode/
