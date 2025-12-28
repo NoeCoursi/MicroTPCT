@@ -1,1 +1,1 @@
-# This file allows this folder to be treated as a Python package
+from .__version__ import __version__, __authors__
