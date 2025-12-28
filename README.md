@@ -43,3 +43,54 @@ microtpct
     ├── helpers.py      # Petites fonctions transverses utilisé partout (ex: time wrapper, gestion des paths)
     └── logging.py      # Génère les logs (pour la reproductibilités)
 ```
+
+## Quelque pro tips pour travailler proprement
+
+#### Travailler dans un environnement virtuel
+
+- Pour le créer :
+
+Dans un terminal de VScode : 
+
+Pour windows :
+```
+python -m venv venv
+```
+
+Pour Linux (s/o Ambroise) :
+```
+python3 -m venv venv pour Linux
+```
+
+- Pour l'activer :
+
+Pour windows :
+```
+.\venv\Scripts\Activate
+```
+
+Pour Linux (Ambroise RPZ) :
+```
+source venv/bin/activate
+```
+*Bien vérifier que l'environnement est actif avec l'inscription (.venv) devant la ligne.*
+
+- Configurez VScode pour utiliser l’environnement :
+
+Ctrl + Shift + P > écrire Python: Select Interpreter > séléctionner le fichier suggéré
+
+#### Gérer proprement les packages
+
+L'environnement virtuel permet de n'utiliser que les packages nécéssaires au projet.
+
+A la première exécution du programme après un `git pull` ou un `git clone` :
+
+```
+pip install -r requirements.txt
+```
+
+Pour mettre à jour les packages nécéssaires dans `requirements.txt` après utilisation d'un nouveau package :
+
+```
+pip freeze > requirements.txt
+```
