@@ -44,7 +44,9 @@ microtpct
     └── logging.py      # Génère les logs (pour la reproductibilités)
 ```
 
-## Quelque pro tips pour travailler proprement
+&nbsp;
+
+## Quelques pro tips pour travailler proprement
 
 #### Travailler dans un environnement virtuel
 
@@ -75,7 +77,7 @@ source venv/bin/activate
 ```
 *Bien vérifier que l'environnement est actif avec l'inscription (.venv) devant la ligne.*
 
-- Configurez VScode pour utiliser l’environnement :
+- Pour configurer VScode à utiliser l’environnement :
 
 Ctrl + Shift + P > écrire Python: Select Interpreter > séléctionner le fichier suggéré
 
@@ -94,3 +96,60 @@ Pour mettre à jour les packages nécéssaires dans `requirements.txt` après ut
 ```
 pip freeze > requirements.txt
 ```
+
+&nbsp;
+
+## Réflexion sur le traitement des données
+
+En input, on a  :
+
+- Sortie Proline des peptides matchés au protéome alternatif (nécessaire) → **A**
+- Fasta du protéome canonique de l'organisme (nécéssaire) → **B**
+- Sortie Proline des peptides matchés au protéome canonique (optionnel) → **C**
+
+&nbsp;
+
+On aligne (~ CTRL + F) chaque peptides **A** sur **B**.
+Pour chaque peptides **A**, on a alors deux cas :
+
+- Le peptides n'est matché aucune protéine canonique → Appartient vraissemblablement à une microprotéine
+- Le peptides est matché sur une ou plusieurs protéines canoniques → On ne peut pas vraiment conclure
+
+&nbsp;
+
+Si on regarde du point de vue accessions du protéome alternatif (PXXXXX, IP_XXXXXXX, II_XXXXXXX) de la liste **A** :
+
+- Si tous les peptides **A** d'une même accession sont matchés au(x) même(s) protéine(s) **B** → Vraissemblablement pas une microprotéine
+- Si aucun peptide **A** d'une même accession matché à rien → Vraissemblablement une microprotéine
+
+Si les peptides **A** sont matchés à une protéine qui apparait également dans la liste **C**, alors cela renforce notre niveau de certitude sur le fait que le peptide est issus d'un artéfact de digestion et pas d'une microprotéine.
+
+Si on prend la nomenclature d'openprot (refProt, II_, IP_), il y a fort à parier que les refProt et les II_ match avec le protéome canonique et que les IP_ ne match à rien. Les cas intéressant sont les cas où on observe l'inverse.
+
+
+En output on pourrait fournir :
+
+- Statistiques globales
+    - Nombre de peptides **A** total
+    - Nombre de peptides **A** matchés
+    - Nombre de peptides **A** non matchés
+    - Nombre de protéines alternatives **A** total
+    - Nombre de protéines alternatives **A** matché au moins une fois
+    - Nombre de protéines alternatives **A** non matchés
+    - Nombre de protéines **B** total
+    - Nombre de protéines **B** matché au moins une fois
+    - Nombre de protéines **B** non matchés
+    - Nombre de protéines **C** total
+    - Nombre de protéines **C** matché au moins une fois
+    - Nombre de protéines **C** non matchés
+
+*Les neufs derniers points peuvent être représentés sous la forme d'un diagramme de Venn pour une meilleurs lisibilités*
+
+- Fichiers de sortie :
+    - Liste des peptides **A** avec les matchs éventuels : *accession,peptide_sequence,match,matched_ids,num_matches*
+
+
+#### Questions :
+
+- Comment est-ce possible que plusieurs peptides d'une même accession match la (les) même(s) protéines ?
+- Faudrait-il que l'on prenne en compte la taille des peptides ? Un peptides court à statistiquement plus de chance d'être matché quelque part, qu'un peptides long.
