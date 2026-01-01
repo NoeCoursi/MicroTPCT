@@ -1,1 +1,5 @@
-# This file allows this folder to be treated as a Python package
+from .logging import setup_logger
+
+__all__ = [
+    "setup_logger",
+]
