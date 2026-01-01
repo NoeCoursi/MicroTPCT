@@ -81,6 +81,23 @@ source venv/bin/activate
 
 Ctrl + Shift + P > écrire Python: Select Interpreter > séléctionner le fichier suggéré
 
+#### Installer le package microtpct en mode editable
+
+Si vous tenter d'utiliser `microtpct` en dehors de `src/` vous risquez de rencontrer l'erreur : `ModuleNotFoundError: No module named 'microtpct'`
+
+Cette erreur vient du fait que Python ne trouve pas `microtpct` dans son `sys.path` qui gère les packages chargés dans l'environnement. *Croyez-moi, ce n'est qu'après une looooongue discussion avec ChatGPT que j'ai compris l'erreur...*
+
+Pour fixer cette erreur, il existe plusieur façon de le faire. La plus simple et la plus pro est sûrement d'nstaller le package `microtpct` en mode editable :
+
+```
+pip install -e .
+```
+
+Ceci permet de rendre toute modification dans le code immédiatement utilisable. Si tout va bien, **vous n'aurez donc besoin d'exécuter cette commande qu'une fois** après le clone du repo.
+
+*Pour information, le dossier `microtpct.egg-info` qui est créé est ignoré par le `.gitignore`.*
+
+
 #### Gérer proprement les packages
 
 L'environnement virtuel permet de n'utiliser que les packages nécéssaires au projet.
