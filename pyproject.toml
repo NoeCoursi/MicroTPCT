@@ -1,0 +1,6 @@
+[project]
+name = "microtpct"
+version = "0.0.1-dev"
+
+[tool.setuptools.packages.find]
+where = ["src"]
