@@ -1,39 +1,57 @@
-# Exemple d'utilisation :
+"""
+Core biological sequence models for MicroTPCT.
 
-# from dataclasses import dataclass, field
-# from typing import List
+These classes define the canonical data structures manipulated
+by the MicroTPCT pipeline. They are independent of input formats
+and user interfaces.
+"""
 
-# @dataclass
-# class Peptide:
-#     id: str
-#     seq: str
-#     length: int = field(init=False)
-
-#     def __post_init__(self):
-#         self.length = len(self.seq)
-
-#     def is_valid(self) -> bool:
-#         """Check if sequence contains only standard amino acids."""
-#         valid_aa = set("ACDEFGHIKLMNPQRSTVWY")
-#         return set(self.seq.upper()) <= valid_aa
+from dataclasses import dataclass # dataclasses allows auto-creates __init__, __repr__, etc.
 
 
-# @dataclass
-# class Protein:
-#     id: str
-#     seq: str
-#     peptides: List[Peptide] = field(default_factory=list)
-#     length: int = field(init=False)
+# Base sequence
 
-#     def __post_init__(self):
-#         self.length = len(self.seq)
+@dataclass(frozen=True) # Frozen to prevent sequence modification (~ read only)
+class Sequence:
+    """
+    Generic biological sequence.
 
-#     def extract_peptides(self, min_len: int = 7, max_len: int = 30) -> List[Peptide]:
-#         """Return list of Peptides from this protein sequence."""
-#         self.peptides = [
-#             Peptide(id=f"{self.id}_{i}", seq=self.seq[i:i+length])
-#             for i in range(len(self.seq))
-#             for length in range(min_len, max_len+1)
-#             if i+length <= len(self.seq)
-#         ]
-#         return self.peptides
+    This class should not be instantiated directly for user inputs.
+    """
+    id: str
+    sequence: str
+
+    def __post_init__(self):
+        if not self.id:
+            raise ValueError("Sequence id cannot be empty.")
+        
+        if not self.sequence:
+            raise ValueError("Sequence cannot be empty.")
+
+
+# Protein / peptide
+
+@dataclass(frozen=True)
+class ProteinSequence(Sequence):
+    """
+    Protein sequence.
+    """
+    accession: str
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        if not self.accession:
+            raise ValueError("Protein accession cannot be empty.")
+    
+    @property # Compute sequence length
+    def length(self) -> int: 
+        return len(self.sequence)
+
+
+@dataclass(frozen=True)
+class PeptideSequence(ProteinSequence):
+    """
+    Peptide sequence.
+    """
+    pass
