@@ -24,12 +24,19 @@ class SequenceDatabase(Generic[T]):
     Provides basic storage and querying functionality.
     """
 
-    def __init__(self):
+    def __init__(self, expected_type: type):
         self._sequences: List[T] = []
         self._by_accession = defaultdict(list)
+        self._expected_type = expected_type  # type to enforce
 
     def add(self, seq: T):
-        """Add a sequence to the database."""
+        """Add a sequence to the database, enforcing type."""
+        if not isinstance(seq, self._expected_type):
+            raise TypeError(
+                f"Expected object of type {self._expected_type.__name__}, "
+                f"got {type(seq).__name__}"
+            )
+
         self._sequences.append(seq)
         if hasattr(seq, "accession"):
             self._by_accession[seq.accession].append(seq)
@@ -61,11 +68,16 @@ class SequenceDatabase(Generic[T]):
 
 class ProteinDatabase(SequenceDatabase[ProteinSequence]):
     """Database specialized for ProteinSequence objects."""
-    pass
+    
+    def __init__(self):
+        super().__init__(ProteinSequence)
 
 
 class PeptideDatabase(SequenceDatabase[PeptideSequence]):
     """Database specialized for PeptideSequence objects."""
+
+    def __init__(self):
+        super().__init__(PeptideSequence)
     
     def get_unique_accessions(self) -> List[str]:
         """Return a list of all unique protein accessions in this database."""
