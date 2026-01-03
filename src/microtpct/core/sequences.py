@@ -6,7 +6,7 @@ by the MicroTPCT pipeline. They are independent of input formats
 and user interfaces.
 """
 
-from dataclasses import dataclass # dataclasses allows auto-creates __init__, __repr__, etc.
+from dataclasses import dataclass, field # dataclasses allows auto-creates __init__, __repr__, etc.
 
 
 # Base sequence
@@ -19,7 +19,7 @@ class Sequence:
     This class should not be instantiated directly for user inputs.
     """
     id: str
-    sequence: str
+    sequence: str = field(repr=False) # Avoid printing sequence when object is called
 
     def __post_init__(self):
         if not self.id:
