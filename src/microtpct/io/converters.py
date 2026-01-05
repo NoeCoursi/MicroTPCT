@@ -12,6 +12,7 @@ from microtpct.core.sequences import ProteinSequence, PeptideSequence
 def protein_input_to_core(prot: ProteinInput) -> ProteinSequence:
     """
     Convert a validated ProteinInput into a core ProteinSequence.
+    This function assumes the input has already been validated.
     """
     if type(prot) is not ProteinInput:
         raise TypeError(
@@ -28,6 +29,7 @@ def protein_input_to_core(prot: ProteinInput) -> ProteinSequence:
 def peptide_input_to_core(pep: PeptideInput) -> PeptideSequence:
     """
     Convert a validated PeptideInput into a core PeptideSequence.
+    This function assumes the input has already been validated.
     """
     if type(pep) is not PeptideInput:
         raise TypeError(
