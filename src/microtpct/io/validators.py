@@ -16,7 +16,7 @@ from microtpct.utils import setup_logger
 AMINO_ACIDS = set("GPAVLIMCFYWHKRQNEDST")
 
 
-logger = setup_logger(__name__, log_file="logs/val.log")
+logger = setup_logger(__name__)
 
 
 # Base validation
