@@ -8,19 +8,20 @@ It enforces data completeness, formatting rules and basic
 biological constraints.
 """
 
-from microtpct.io.schema import *
+from microtpct.io.schema import SequenceInput, ProteinInput, PeptideInput
+from microtpct.utils import setup_logger
 
 # Biological constants 
 
 AMINO_ACIDS = set("GPAVLIMCFYWHKRQNEDST")
 
 
+logger = setup_logger(__name__, log_file="logs/val.log")
+
+
 # Base validation
 
 def validate_sequence_input(seq: SequenceInput) -> None:
-    """
-    Validate a generic biological sequence input.
-    """
     if not seq.id:
         raise ValueError("SequenceInput.id cannot be empty.")
 
@@ -34,12 +35,9 @@ def validate_sequence_input(seq: SequenceInput) -> None:
 # Protein validation
 
 def validate_protein_input(prot: ProteinInput) -> None:
-    """
-    Validate a protein input sequence.
-    """
     if type(prot) is not ProteinInput:
         raise TypeError(
-            f"validate_protein_input() expects a ProteinInput, got {type(prot).__name__}"
+            f"validate_protein_input() expects ProteinInput, got {type(prot).__name__}"
         )
 
     validate_sequence_input(prot)
@@ -50,31 +48,37 @@ def validate_protein_input(prot: ProteinInput) -> None:
     if not isinstance(prot.accession, str):
         raise TypeError("ProteinInput.accession must be a string.")
 
-    validate_amino_acid_sequence(prot.sequence)
+    validate_amino_acid_sequence(prot.sequence, obj_id=prot.accession)
 
 
 # Peptide validation
 
 def validate_peptide_input(pep: PeptideInput) -> None:
-    """
-    Validate a peptide input sequence.
-    """
-    if type(pep) is not ProteinInput:
+    if type(pep) is not PeptideInput:
         raise TypeError(
-            f"validate_peptide_input() expects a PeptideInput, got {type(pep).__name__}"
+            f"validate_peptide_input() expects PeptideInput, got {type(pep).__name__}"
         )
 
-    validate_protein_input(pep)
+    validate_sequence_input(pep)
+
+    if not pep.accession:
+        raise ValueError("PeptideInput.accession cannot be empty.")
+    
+    if not isinstance(pep.accession, str):
+        raise TypeError("PeptideInput.accession must be a string.")
+
+    validate_amino_acid_sequence(pep.sequence, obj_id=pep.id)
 
 
 # Internal helpers
 
-def validate_amino_acid_sequence(sequence: str) -> None:
-    """
-    Ensure sequence contains only valid amino acids.
-    """
+def validate_amino_acid_sequence(sequence: str, obj_id: str | None = None) -> None:
     invalid = set(sequence.upper()) - AMINO_ACIDS
     if invalid:
+        id_info = f" for object '{obj_id}'" if obj_id else ""
+        logger.error(
+            f"Invalid amino acids found{id_info}: {', '.join(sorted(invalid))}"
+        )
         raise ValueError(
-            f"Invalid amino acids found: {', '.join(sorted(invalid))}"
+            f"Invalid amino acids found{id_info}: {', '.join(sorted(invalid))}"
         )
