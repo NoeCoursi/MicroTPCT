@@ -26,6 +26,12 @@ class BaseReader:
     def __init__(self, file_path: str, role: SequenceRole):
         self.file_path = Path(file_path)
         self.role = role
+    
+    def _check_file_exists(self) -> bool:
+        if not self.file_path.exists():
+            logger.error(f"File not found: {self.file_path}")
+            return False
+        return True
 
     def read(self) -> Iterator:
         """
@@ -43,12 +49,11 @@ class FastaReader(BaseReader):
     """
 
     def read(self) -> Iterator:
-        if not self.file_path.exists():
-            logger.error(f"File not found: {self.file_path}")
+        if not self._check_file_exists():
             return
-
+        
         try:
-            from Bio import SeqIO
+            from Bio import SeqIO # Only if needed (optimization)
         except ImportError:
             logger.error("Biopython is required for FASTA parsing. Please install biopython.")
             return
@@ -66,22 +71,37 @@ class FastaReader(BaseReader):
         Build the Input object based on the role.
         Performs light normalization (strip, upper).
         """
-        sequence = sequence.strip().upper()
+        sequence = sequence.strip().upper() # Normalization
         if self.role == SequenceRole.PROTEIN:
             return ProteinInput(id=header, sequence=sequence)
+        
         elif self.role == SequenceRole.PEPTIDE:
             return PeptideInput(id=header, sequence=sequence)
+        
         else:
             logger.warning(f"Unknown role '{self.role}' for sequence {header}")
             return None
 
 
 # Reader factory
-def read_file(file_path: str, format: str, role: SequenceRole) -> Iterator:
+def read_file(file_path: str, role: SequenceRole, format: Optional[str] = None) -> Iterator:
     """
     Factory function to return the appropriate reader based on format.
+    If format is not specified, try to deduce it from file extension.
     Usage: read_file("file.fasta", format="fasta", role=SequenceRole.PROTEIN)
     """
+
+    file_path_obj = Path(file_path) # Convert into Path object to get the suffix.
+
+    # Format guessing from extension
+    if not format:
+        ext = file_path_obj.suffix.lower()
+        if ext in (".fasta", ".fa"):
+            format = "fasta"
+        else:
+            logger.error(f"Cannot deduce format from file extension '{ext}' for file {file_path}")
+            return iter([])  # empty iterator
+
     format = format.lower()
     if format == "fasta":
         reader = FastaReader(file_path, role)
@@ -90,6 +110,3 @@ def read_file(file_path: str, format: str, role: SequenceRole) -> Iterator:
         return iter([])  # empty iterator
 
     return reader.read()
-
-
-# Idea for future. Implement an auto detector of format (.suffix() ??) or force format
