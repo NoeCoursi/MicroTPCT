@@ -26,16 +26,17 @@ microtpct
 │   ├── alignment.py    # Algorithme d'alignement
 │   ├── metrics.py      # Calcul des métriques
 │   ├── pipeline.py     # Orchestrateur des différents scripts
-│   └── sequences.py    # Défini la forme des séquence bioloogique (protéines, peptides) ensemble de classes
+│   └── sequences.py    # Défini la forme des séquence biologique, ensemble de classes propres et immuables
 ├── interfaces          # Interfaces de l'outil
 │   ├── __init__.py     # Obligatoire utiliser les scripts de ce dossier dans d'autres parties du projet.
 │   ├── cli.py          # En lignes de commandes
 │   └── gui.py          # Interface graphique
 ├── io                  # Gestion des fichiers d'input et d'output
 │   ├── __init__.py     # Obligatoire utiliser les scripts de ce dossier dans d'autres parties du projet.
+│   ├── converter.py    # Converti les inputs une fois validés en sequences propres pour le core/
 │   ├── readers.py      # Lit, parse et traite les inputs
-│   ├── schema.py       # Défini les formats des inputs et output de façon centralisée, permet la validation
-│   ├── validators.py   # Valide les formats d'input/output
+│   ├── schema.py       # Défini les formats des inputs et output de façon centralisée, sans validation
+│   ├── validators.py   # Valide les formats d'input
 │   └── writers.py      # Génère les outputs
 └── utils               # Petits scripts utilitaires
     ├── __init__.py     # Obligatoire utiliser les scripts de ce dossier dans d'autres parties du projet.
@@ -47,6 +48,27 @@ microtpct
 &nbsp;
 
 ## Quelques pro tips pour travailler proprement
+
+#### Implémenter, modifier ou créer un nouveau script
+
+Au lieu de tous travailler sur la même branche du projet Git, je propose que nous utilisions des branches bien nommée pour chaque étapes du projets/implémentation.
+
+Pour créer un branche :
+
+```
+git pull origin main
+git checkout -b nom/implémentation
+```
+
+*Ici, on récupère le dernier contenu de main (ou de la branche que l'on veut fork) puis on crée la nouvelle branche (option `-b` de `checkout`).*
+
+**Attention :**
+
+- **Vérifiez bien que vous travaillez sur la nouvelle branche** *(en bas à gauche dans VScode)*
+- **Nommez bien votre branche** `nom/implémentation` *(exemple : ambre/aligners-fix-bug)*
+
+Pour retourner se balader entre les différentes branche : `git checkout nom/implémentation` **sans le `-b`**
+
 
 #### Travailler dans un environnement virtuel
 
