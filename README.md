@@ -83,7 +83,7 @@ python -m venv venv
 
 Pour Linux (s/o Ambroise) :
 ```
-python3 -m venv venv pour Linux
+python3 -m venv venv
 ```
 
 - Pour l'activer :
