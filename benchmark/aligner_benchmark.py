@@ -45,11 +45,6 @@ SEQ_A = "GATTACAGATTACAGATTACA" * 5
 SEQ_B = "GACTATAAGACTATAAGACTATAA" * 5
 REPEATS = 5
 
-
-#blast https://biopython.org/docs/dev/Tutorial/chapter_blast.html
-fasta_string = open("seq.fasta").read()
-result_stream = Blast.qblast("blastn", "nt", fasta_string)
-
 def bench(label, fn):
     durations = []
     for _ in range(REPEATS):
@@ -58,6 +53,11 @@ def bench(label, fn):
         durations.append(time.perf_counter() - t0)
     print(f"{label:25} mean={statistics.mean(durations):.6f}s "
           f"min={min(durations):.6f}s max={max(durations):.6f}s")
+
+
+#blast https://biopython.org/docs/dev/Tutorial/chapter_blast.html
+fasta_string = open("seq.fasta").read()
+result_stream = Blast.qblast("blastp", "nr", fasta_string)
 
 
 aligner = Align.PairwiseAligner()
