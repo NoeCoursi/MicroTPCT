@@ -37,13 +37,18 @@ import statistics
 import numpy
 import Bio
 from Bio import Align
+from Bio import Blast 
 #import parasail
 import edlib
 
 SEQ_A = "GATTACAGATTACAGATTACA" * 5
 SEQ_B = "GACTATAAGACTATAAGACTATAA" * 5
-REPEATS = 50
+REPEATS = 5
 
+
+#blast https://biopython.org/docs/dev/Tutorial/chapter_blast.html
+fasta_string = open("seq.fasta").read()
+result_stream = Blast.qblast("blastn", "nt", fasta_string)
 
 def bench(label, fn):
     durations = []
@@ -59,10 +64,10 @@ aligner = Align.PairwiseAligner()
 
 def bio_global():
     aligner.mode = "global"
-    aligner.match_score = 2
+    aligner.match_score = 1
     aligner.mismatch_score = -1
-    aligner.open_gap_score = -2
-    aligner.extend_gap_score = -1
+    aligner.open_gap_score = -1
+    aligner.extend_gap_score = -0.5
     list(aligner.align(SEQ_A, SEQ_B))
 
 
@@ -94,5 +99,5 @@ if __name__ == "__main__":
     #bench("Parasail SW", parasail_sw)
     #bench("Parasail NW", parasail_nw)
     bench("Edlib NW", edlib_lev)
-
+    print("Done.")
 
