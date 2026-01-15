@@ -16,9 +16,9 @@ Dans **chaque fichier** (vide pour le moment), **j'ai essayer d'indiquer sont r�
 
 ```
 microtpct
-├── __init__.py         # Obligatoire pour reconnaitre microtpct comme un package
+├── __init__.py         # Obligatoire pour reconnaitre microTPCT comme un package
 ├── __version__.py      # Informations de version et d'auteurs (pour la reproductibilité)
-├── config              # Paramètres par défaults (mismatch max, remplacement de I/L...)
+├── config              # Paramètres par défault (mismatch max, remplacement de I/L...)
 │   ├── __init__.py     # Obligatoire utiliser les scripts de ce dossier dans d'autres parties du projet.
 │   └── defaults.yaml   # Liste organisée des paramètres
 ├── core                # Coeur computationnel
@@ -26,23 +26,23 @@ microtpct
 │   ├── alignment.py    # Algorithme d'alignement
 │   ├── metrics.py      # Calcul des métriques
 │   ├── pipeline.py     # Orchestrateur des différents scripts
-│   └── sequences.py    # Défini la forme des séquences biologique, ensemble de classes propres et immuables
+│   └── sequences.py    # Définit la forme des séquences biologiques, ensemble de classes propres et immuables
 ├── interfaces          # Interfaces de l'outil
 │   ├── __init__.py     # Obligatoire utiliser les scripts de ce dossier dans d'autres parties du projet.
-│   ├── cli.py          # En lignes de commandes
+│   ├── cli.py          # En lignes de commande
 │   └── gui.py          # Interface graphique
 ├── io                  # Gestion des fichiers d'input et d'output
 │   ├── __init__.py     # Obligatoire utiliser les scripts de ce dossier dans d'autres parties du projet.
-│   ├── converter.py    # Converti les inputs une fois validés en sequences propres pour le core/
+│   ├── converter.py    # Convertit les inputs une fois validés en sequences propres pour le core/
 │   ├── readers.py      # Lit, parse et traite les inputs
 │   ├── schema.py       # Définit les formats des inputs et output de façon centralisée, sans validation
 │   ├── validators.py   # Valide les formats d'input
 │   └── writers.py      # Génère les outputs
 └── utils               # Petits scripts utilitaires
     ├── __init__.py     # Obligatoire utiliser les scripts de ce dossier dans d'autres parties du projet.
-    ├── exeptions.py    # Listes des exeptions propre à MicroTPCT
+    ├── exeptions.py    # Listes des exceptions propres à MicroTPCT
     ├── helpers.py      # Petites fonctions transverses utilisé partout (ex: time wrapper, gestion des paths)
-    └── logging.py      # Génère les logs (pour la reproductibilités)
+    └── logging.py      # Génère les logs (pour la reproductibilité)
 ```
 
 &nbsp;
@@ -51,7 +51,7 @@ microtpct
 
 #### Implémenter, modifier ou créer un nouveau script
 
-Au lieu de tous travailler sur la même branche du projet Git, je propose que nous utilisions des branches bien nommées pour chaque étapes du projets/implémentation.
+Au lieu de tous travailler sur la même branche du projet Git, je propose que nous utilisions des branches bien nommées pour chaque étapes du projet/implémentation.
 
 Pour créer une branche :
 
@@ -130,7 +130,7 @@ A la première exécution du programme après un `git pull` ou un `git clone` :
 pip install -r requirements.txt
 ```
 
-Pour mettre à jour les packages nécéssaires dans `requirements.txt` après utilisation d'un nouveau package :
+Pour mettre à jour les packages nécessaires dans `requirements.txt` après utilisation d'un nouveau package :
 
 ```
 pip freeze > requirements.txt
