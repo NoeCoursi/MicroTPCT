@@ -247,30 +247,86 @@ class XlsxReader(AbstractPandasReader):
         return pd.read_excel(str(self.file_path), sheet_name=self.sheet_name)
 
 
-# Reader factory
-def read_file(file_path: str, role: SequenceRole, format: Optional[str] = None) -> Iterator:
+def read_file(
+    file_path: str,
+    role: SequenceRole,
+    format: Optional[str] = None,
+    **kwargs,
+) -> Iterator:
     """
     Factory function to return the appropriate reader based on format.
-    If format is not specified, try to deduce it from file extension.
-    Usage: read_file("file.fasta", format="fasta", role=SequenceRole.PROTEIN)
+
+    If format is not specified, it is deduced from the file extension.
+
+    For tabular formats (CSV/TSV), the separator is deduced from the extension
+    unless explicitly provided via kwargs.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the input file.
+    role : SequenceRole
+        Role of the sequences (PROTEIN or PEPTIDE).
+    format : str, optional
+        Input format ("fasta", "csv", "tsv", "xlsx").
+        If None, deduced from file extension.
+    **kwargs
+        Additional keyword arguments passed to the reader constructor
+        (e.g., sep, sheet_name, columns).
+
+    Returns
+    -------
+    Iterator
+        Iterator over Input objects.
     """
 
-    file_path_obj = Path(file_path) # Convert into Path object to get the suffix.
+    file_path_obj = Path(file_path)
+    ext = file_path_obj.suffix.lower()
 
-    # Format guessing from extension
-    if not format:
-        ext = file_path_obj.suffix.lower()
-        if ext in (".fasta", ".fa"):
+    # Deduce format from extension
+    if format is None:
+        if ext in (".fasta", ".fa", ".faa"):
             format = "fasta"
+        elif ext == ".csv":
+            format = "csv"
+        elif ext in (".tsv", ".txt"):
+            format = "tsv"
+        elif ext == ".xlsx":
+            format = "xlsx"
         else:
-            logger.error(f"Cannot deduce format from file extension '{ext}' for file {file_path}")
-            return iter([])  # empty iterator
+            logger.error(
+                f"Cannot deduce format from file extension '{ext}' for file {file_path}"
+            )
+            return iter([])
 
     format = format.lower()
+
+    # Instantiate appropriate reader
     if format == "fasta":
         reader = FastaReader(file_path, role)
+
+    elif format in ("csv", "tsv"):
+        # Deduce separator from extension unless explicitly provided
+        if "sep" not in kwargs:
+            if ext == ".csv":
+                kwargs["sep"] = ","
+            elif ext in (".tsv", ".txt"):
+                kwargs["sep"] = "\t"
+            else:
+                # fallback (should not really happen if format deduction worked)
+                kwargs["sep"] = ","
+                logger.warning(
+                    f"Could not deduce separator from extension '{ext}'. "
+                    f"Falling back to ',' for file {file_path}."
+                )
+
+        reader = TabularReader(file_path, role, **kwargs)
+
+    elif format == "xlsx":
+        reader = XlsxReader(file_path, role, **kwargs)
+
     else:
         logger.error(f"Unsupported format '{format}' for file {file_path}")
-        return iter([])  # empty iterator
+        return iter([])
 
     return reader.read()
