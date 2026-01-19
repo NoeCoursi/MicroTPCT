@@ -88,49 +88,6 @@ class FastaReader(BaseReader):
 # Tabular reader
 class TabularReader(BaseReader):
     """
-    Tabular format reader using Pandas read_csv.
-    Produces ProteinInput or PeptideInput depending on the role.
-    """
-
-    def read(self) -> Iterator:
-        if not self._check_file_exists():
-            return
-        
-        try:
-            from pandas import read_csv # Only if needed (optimization)
-        except ImportError:
-            logger.error("Pandas is required for tabular format parsing. Please install Pandas.")
-            return
-
-        try:
-            df = read_csv(str(self.file_path), sep=",")
-            for _, record in df.iterrows():
-                input_obj = self._build_input(record["peptide_id"], record["accession"], record["sequence"])
-                if input_obj:
-                    yield input_obj
-        except Exception as e:
-            logger.error(f"Error reading tabular file ({self.file_path}): {e}")
-
-    def _build_input(self, id: str, accession: str, sequence: str) -> Optional[object]:
-        """
-        Build the Input object based on the role.
-        Performs light normalization (strip, upper).
-        """
-        sequence = sequence.strip().upper() # Normalization
-        if self.role == SequenceRole.PROTEIN:
-            return ProteinInput(id=id, accession=accession, sequence=sequence)
-        
-        elif self.role == SequenceRole.PEPTIDE:
-            return PeptideInput(id=id, accession=accession, sequence=sequence)
-        
-        else:
-            logger.warning(f"Unknown role '{self.role}' for sequence {id}")
-            return None
-    pass
-    
-
-class TabularReader(BaseReader):
-    """
     Tabular format reader using pandas.read_csv.
 
     By default, expects Proline-like headers:
@@ -176,7 +133,7 @@ class TabularReader(BaseReader):
         """
         super().__init__(file_path, role)
         self.sep = sep
-        self.columns = columns or self.DEFAULT_COLUMNS
+        self.columns = columns or self.PROLINE_COLUMNS
 
     def read(self) -> Iterator:
         if not self._check_file_exists():
@@ -192,6 +149,124 @@ class TabularReader(BaseReader):
             df = pd.read_csv(str(self.file_path), sep=self.sep)
         except Exception as e:
             logger.error(f"Error reading tabular file ({self.file_path}): {e}")
+            return
+
+        if not self._check_required_columns(df.columns):
+            return
+
+        for record in df.itertuples(index=False):
+            try:
+                id_val = getattr(record, self.columns["id"])
+                accession_val = getattr(record, self.columns["accession"])
+                sequence_val = getattr(record, self.columns["sequence"])
+            except AttributeError as e:
+                logger.error(f"Column access error in {self.file_path}: {e}")
+                continue
+
+            input_obj = self._build_input(id_val, accession_val, sequence_val)
+            if input_obj:
+                yield input_obj
+
+    # Internal helpers
+    def _check_required_columns(self, available_columns: Sequence[str]) -> bool:
+        """Check that all required columns are present in the dataframe."""
+        required = set(self.columns.values())
+        available = set(available_columns)
+
+        missing = required - available
+        if missing:
+            logger.error(
+                f"Missing required columns in {self.file_path}: {sorted(missing)}. "
+                f"Available columns: {sorted(available)}"
+            )
+            return False
+
+        return True
+
+    def _build_input(
+        self, id: str, accession: str, sequence: str
+    ) -> Optional[object]:
+        """
+        Build the Input object based on the role.
+        Performs light normalization (strip, upper).
+        """
+        sequence = str(sequence).strip().upper()
+
+        if self.role == SequenceRole.PROTEIN:
+            return ProteinInput(id=id, accession=accession, sequence=sequence)
+
+        elif self.role == SequenceRole.PEPTIDE:
+            return PeptideInput(id=id, accession=accession, sequence=sequence)
+
+        else:
+            logger.warning(f"Unknown role '{self.role}' for sequence {id}")
+            return None
+
+
+# XLSX reader
+class XlsxReader(BaseReader):
+    """
+    Excel (.xlsx) format reader using pandas.read_excel.
+
+    By default, expects Proline-like headers:
+        - peptide_id
+        - accession
+        - sequence
+
+    Produces ProteinInput or PeptideInput depending on the role.
+    """
+
+    # Default Proline headers
+    PROLINE_COLUMNS: Dict[str, str] = {
+        "id": "peptide_id",
+        "accession": "accession",
+        "sequence": "sequence",
+    }
+
+    def __init__(
+        self,
+        file_path: str,
+        role: SequenceRole,
+        sheet_name: int | str = 0,
+        columns: Optional[Dict[str, str]] = None,
+    ):
+        """
+        Parameters
+        ----------
+        file_path : str
+            Path to the .xlsx file.
+        role : SequenceRole
+            Role of the sequences (PROTEIN or PEPTIDE).
+        sheet_name : int or str, optional
+            Sheet index or name to read (default: 0, first sheet).
+        columns : dict, optional
+            Mapping of logical fields to column names.
+            Example:
+                {
+                    "id": "peptide_id",
+                    "accession": "accession",
+                    "sequence": "sequence"
+                }
+            If None, DEFAULT_COLUMNS is used.
+        """
+        super().__init__(file_path, role)
+        self.sheet_name = sheet_name
+        self.columns = columns or self.PROLINE_COLUMNS
+
+    def read(self) -> Iterator:
+        if not self._check_file_exists():
+            return
+
+        try:
+            import pandas as pd  # lazy import
+        except ImportError:
+            logger.error("Pandas is required for XLSX parsing. Please install pandas.")
+            return
+
+        try:
+            df = pd.read_excel(str(self.file_path), sheet_name=self.sheet_name)
+        except Exception as e:
+            logger.error(f"Error reading XLSX file ({self.file_path}): {e}")
             return
 
         if not self._check_required_columns(df.columns):
