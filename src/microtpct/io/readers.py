@@ -85,6 +85,53 @@ class FastaReader(BaseReader):
             return None
 
 
+# Tabular reader
+class TabularReader(BaseReader):
+    """
+    Tabular format reader using Pandas read_csv.
+    Produces ProteinInput or PeptideInput depending on the role.
+    """
+
+    def read(self) -> Iterator:
+        if not self._check_file_exists():
+            return
+        
+        try:
+            from pandas import read_csv # Only if needed (optimization)
+        except ImportError:
+            logger.error("Pandas is required for tabular format parsing. Please install Pandas.")
+            return
+
+        try:
+            df = read_csv(str(self.file_path), sep=",")
+            for _, record in df.iterrows():
+                input_obj = self._build_input(record["peptide_id"], record["accession"], record["sequence"])
+                if input_obj:
+                    yield input_obj
+        except Exception as e:
+            logger.error(f"Error reading tabular file ({self.file_path}): {e}")
+
+    def _build_input(self, id: str, accession: str, sequence: str) -> Optional[object]:
+        """
+        Build the Input object based on the role.
+        Performs light normalization (strip, upper).
+        """
+        sequence = sequence.strip().upper() # Normalization
+        if self.role == SequenceRole.PROTEIN:
+            return ProteinInput(id=id, accession=accession, sequence=sequence)
+        
+        elif self.role == SequenceRole.PEPTIDE:
+            return PeptideInput(id=id, accession=accession, sequence=sequence)
+        
+        else:
+            logger.warning(f"Unknown role '{self.role}' for sequence {id}")
+            return None
+    pass
+    
+
+    
+
+
 # Reader factory
 def read_file(file_path: str, role: SequenceRole, format: Optional[str] = None) -> Iterator:
     """
