@@ -1,66 +1,58 @@
-#from microtpct.core.sequences import ProteinSequence # Object containing ORF prot seq
-
+#/usr/bin/python3
 # Required pip install pybmoore
 
 import pyfastx #type: ignore
 import pybmoore #type: ignore
+import sys
 
 
 from collections import defaultdict
 from Bio import SeqIO #type: ignore
 
 
+query_path = sys.argv[1]
+target_path = sys.argv[2]
 
 
-
-def query_present_in_target(query_path: str, target_path: str):
+def match_query_to_target(
+        query_path: str,
+        target_path: str) -> dict:
+    
     """
-    Vérifie pour chaque séquence dans query_path si elle apparaît dans target_path.
-    Retourne un dict { query_id: True/False }
+    Takes in argument a peptide file.fa and a target file.fa
+
+    usage python3 boyer_moore query.fa target.fa
+
+    returns : 
+        matching_dict = {
+            "matched": [],
+            "non_matched": []
+        }
+
     """
-    matching_dict = defaultdict(list)
-    query = pyfastx.Fasta(query_path, build_index=False)
-    target = pyfastx.Fasta(target_path, build_index=False)
+        
+    matching_dict = {
+        "matched": [],
+        "non_matched": []
+    }
 
-    # Concatène toutes les séquences cibles
-    full_target = "".join(str(seq) for _,seq in pyfastx.Fasta(target_path, build_index=False))
-
-
-    for qname, qseq in pyfastx.Fasta(query_path, build_index=False):
-        matches = pybmoore.search(str(qseq), full_target)
-        if len(matches) > 0 :
-            matching_dict["matched"].append(qname)
-        else :
-            matching_dict["non_matched"].append(qname)
-
-    return matching_dict
-
-
-def query_present_in_target_with_BIO(query_path: str, target_path: str):
-    """
-    Vérifie pour chaque séquence dans query_path si elle apparaît dans target_path.
-    Retourne un dict { query_id: True/False }
-    """
-    matching_dict = defaultdict(list)
-
-    # Concatène toutes les séquences cibles
+    # Boyer Moore est plus optimisé pour des grandes séquences
     full_target = "".join(str(record.seq) for record in SeqIO.parse(target_path, "fasta"))
 
 
-    for qname, qseq in pyfastx.Fasta(query_path, build_index=False):
-        matches = pybmoore.search(str(qseq), full_target)
-        if len(matches) > 0 :
-            matching_dict["matched"].append(qname)
-        else :
-            matching_dict["non_matched"].append(qname)
+    with open(query_path) as fh:
+        for record in SeqIO.parse(fh, "fasta"):
+            print(record.id)
+            matches = pybmoore.search(str(record.seq), full_target)
+            if len(matches) > 0 :
+                matching_dict["matched"].append(record.id)
+            else :
+                matching_dict["non_matched"].append(record.id)
 
-    return matching_dict
 
 
 
-matching_dict = query_present_in_target(query_path, target_path)
-#matching_dict = query_present_in_target_with_BIO(query_path, target_path)
+matching_dict = match_query_to_target(query_path, target_path)
 
-print("With Pyfastx below")
 print(matching_dict)
 
