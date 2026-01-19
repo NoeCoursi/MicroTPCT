@@ -71,12 +71,14 @@ class FastaReader(BaseReader):
         Build the Input object based on the role.
         Performs light normalization (strip, upper).
         """
+        id="abc1" # to modify !!
+        accession = header.split("|")[1]
         sequence = sequence.strip().upper() # Normalization
         if self.role == SequenceRole.PROTEIN:
-            return ProteinInput(id=header, sequence=sequence)
+            return ProteinInput(id=id, accession=accession, sequence=sequence)
         
         elif self.role == SequenceRole.PEPTIDE:
-            return PeptideInput(id=header, sequence=sequence)
+            return PeptideInput(id=id, accession=accession, sequence=sequence)
         
         else:
             logger.warning(f"Unknown role '{self.role}' for sequence {header}")
