@@ -1,0 +1,4 @@
+numpy==2.4.1
+biopython==1.86
+pyahocorasick==2.3.0
+ahocorasick_rs==1.0.3

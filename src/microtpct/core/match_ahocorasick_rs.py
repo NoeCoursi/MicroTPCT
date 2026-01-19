@@ -1,24 +1,24 @@
-# pip install pyahocorasick
-import ahocorasick
+# pip install pyahocorasick-rs
+
+from ahocorasick_rs import AhoCorasick
 from Bio import SeqIO
 
 ## to do : replace input (proteins and peptides) with apropriate classes
 
 # Matching with Aho-Corasick
-def run_ahocorasick(peptides, proteome_file):
-    # Build automaton
-    A = ahocorasick.Automaton()
-    for i, pep in enumerate(peptides):
-        A.add_word(pep, (i, pep))
-    A.make_automaton()
+def run_ahocorasick_rs(peptides, proteome_file):
+    # Build Aho-Corasick automaton using ahocorasick_rs
+    ac = AhoCorasick(peptides)
+
     # Prepare results dict: peptide -> list of (protein_id, position)
     results = {pep: [] for pep in peptides}
 
-    # Scan proteome and record matches
+    # Scan proteome and record matches (use overlapping matches to capture all)
     for record in SeqIO.parse(proteome_file, "fasta"):
         seq = str(record.seq)
-        for end_idx, (i, pep) in A.iter(seq):
-            start = end_idx - len(pep) + 1
+        matches = ac.find_matches_as_indexes(seq, overlapping=True)
+        for pat_idx, start, end in matches:
+            pep = peptides[pat_idx]
             results.setdefault(pep, []).append((record.id, start))
 
     return results
@@ -39,6 +39,4 @@ with open(peptides_file) as f:
 proteome_file = "path/to/uniprotkb_proteome_UP000000803_2025_11_25.fasta"
 
 print("\n=== Aho-Corasick ===")
-print(run_ahocorasick(peptides, proteome_file))
-
-
+print(run_ahocorasick_rs(peptides, proteome_file))
