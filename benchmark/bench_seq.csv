@@ -1,0 +1,5 @@
+function,params,time_mean
+sort_dict,{'d': 200000},0.013747039996087552
+sort_dict,{'d': 1000000},0.07723191999830306
+fibonacci_iter,{'n': 35},3.5000150091946127e-06
+fibonacci_iter,{'n': 45},3.3000134862959387e-06
