@@ -44,7 +44,7 @@ while IFS=$'\t' read -r h1 seq1; do
     awk -F'\t' -v q="$h1" -v s="$seq1" '
       {
         pos=index($2, s)-1
-        if(pos>=0) print q","$1","pos
-      } END { if(NR==0) print q",," }'
+        if(pos>=0) print q";"$1";"pos
+      } END { if(NR==0) print q";.;." }'
 
 done
