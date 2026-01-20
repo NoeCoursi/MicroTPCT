@@ -2,13 +2,11 @@
 Functions to benchmark
 Put this script in the benchmark folder
 """
-
+# Example functions to benchmark
 def sort_list(n):
     data = list(range(n))
     data.reverse()
     return sorted(data)
-
-
 def sort_dict(d):
     # si d est un dict, prendre la clé "size"
     if isinstance(d, dict):
@@ -16,8 +14,6 @@ def sort_dict(d):
     data = list(range(d))
     data.reverse()
     return sorted(data)
-
-
 def fibonacci_iter(n):
     a, b = 0, 1
     for _ in range(n):
@@ -25,9 +21,7 @@ def fibonacci_iter(n):
     return a
 
 
-
-
-
+# String matching algorithms
 def aho_corasick_search(text, patterns):
     from ahocorasick import Automaton
 
@@ -65,6 +59,68 @@ def boyer_moore_search(text, pattern):
         else:
             s += max(1, j - bad_char[ord(text[s + j])])
     return results
+
+
+from Bio import SeqIO
+import pybmoore
+
+#from Basile
+def match_boyermoore(
+        query_path: str,
+        target_path: str) -> dict:
+    
+    """
+    Takes in argument a peptide file.fa and a target file.fa
+    usage python3 boyer_moore query.fa target.fa
+
+    returns : 
+        matching_dict = {
+            "matched": [],
+            "non_matched": []
+        }
+
+    """
+        
+    matching_dict = {
+        "matched": [],
+        "non_matched": []
+    }
+
+    # Boyer Moore est plus optimisé pour des grandes séquences
+    full_target = "".join(str(record.seq) for record in SeqIO.parse(target_path, "fasta"))
+
+
+    with open(query_path) as fh:
+        for record in SeqIO.parse(fh, "fasta"):
+            print(record.id)
+            matches = pybmoore.search(str(record.seq), full_target)
+            if len(matches) > 0 :
+                matching_dict["matched"].append(record.id)
+            else :
+                matching_dict["non_matched"].append(record.id)
+
+
+
+#matching_dict = match_query_to_target(query_path, target_path)
+#print(matching_dict)
+
+# to benchmark with equivalent parameters
+def match_boyermoore_text(text: str, patterns: list[str]) -> dict:
+    matching_dict = {
+        "matched": [],
+        "non_matched": []
+    }
+
+    for i, pattern in enumerate(patterns):
+        matches = pybmoore.search(pattern, text)
+        if matches:
+            matching_dict["matched"].append(i)
+        else:
+            matching_dict["non_matched"].append(i)
+
+    return matching_dict
+
+
 
 def knuth_morris_pratt_search(text, pattern):
     m = len(pattern)
