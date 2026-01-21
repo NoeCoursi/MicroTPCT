@@ -51,7 +51,7 @@ def build_database(
         return TargetDB(
             ids=ids,
             sequences=sequences,
-            ambiguous_il_sequence=ambiguous,
+            ambiguous_il_sequences=ambiguous,
             accessions=accessions,
         )
 
