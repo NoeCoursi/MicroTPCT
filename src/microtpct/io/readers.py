@@ -71,14 +71,13 @@ class FastaReader(BaseReader):
         Build the Input object based on the role.
         Performs light normalization (strip, upper).
         """
-        id="abc1" # to modify !!
         accession = header.split("|")[1]
         sequence = sequence.strip().upper() # Normalization
         if self.role == SequenceRole.PROTEIN:
-            return ProteinInput(id=id, accession=accession, sequence=sequence)
+            return ProteinInput(accession=accession, sequence=sequence)
         
         elif self.role == SequenceRole.PEPTIDE:
-            return PeptideInput(id=id, accession=accession, sequence=sequence)
+            return PeptideInput(accession=accession, sequence=sequence)
         
         else:
             logger.warning(f"Unknown role '{self.role}' for sequence {header}")
@@ -104,7 +103,6 @@ class AbstractPandasReader(BaseReader):
 
     # Default Proline headers
     PROLINE_COLUMNS: Dict[str, str] = {
-        "id": "peptide_id",
         "accession": "accession",
         "sequence": "sequence",
     }
@@ -140,14 +138,13 @@ class AbstractPandasReader(BaseReader):
 
         for record in df.itertuples(index=False):
             try:
-                id_val = getattr(record, self.columns["id"])
                 accession_val = getattr(record, self.columns["accession"])
                 sequence_val = getattr(record, self.columns["sequence"])
             except AttributeError as e:
                 logger.error(f"Column access error in {self.file_path}: {e}")
                 continue
 
-            input_obj = self._build_input(id_val, accession_val, sequence_val)
+            input_obj = self._build_input(accession_val, sequence_val)
             if input_obj:
                 yield input_obj
 
@@ -176,7 +173,7 @@ class AbstractPandasReader(BaseReader):
         return True
 
     def _build_input(
-        self, id: str, accession: str, sequence: str
+        self, accession: str, sequence: str
     ) -> Optional[object]:
         """
         Build the Input object based on the role.
@@ -185,10 +182,10 @@ class AbstractPandasReader(BaseReader):
         sequence = str(sequence).strip().upper()
 
         if self.role == SequenceRole.PROTEIN:
-            return ProteinInput(id=id, accession=accession, sequence=sequence)
+            return ProteinInput(accession=accession, sequence=sequence)
 
         elif self.role == SequenceRole.PEPTIDE:
-            return PeptideInput(id=id, accession=accession, sequence=sequence)
+            return PeptideInput(accession=accession, sequence=sequence)
 
         else:
             logger.warning(f"Unknown role '{self.role}' for sequence {id}")
@@ -201,7 +198,6 @@ class TabularReader(AbstractPandasReader):
     Tabular format reader using pandas.read_csv.
 
     By default, expects Proline-like headers:
-        - peptide_id
         - accession
         - sequence
     """
@@ -227,7 +223,6 @@ class XlsxReader(AbstractPandasReader):
     Excel (.xlsx) format reader using pandas.read_excel.
 
     By default, expects Proline-like headers:
-        - peptide_id
         - accession
         - sequence
     """
