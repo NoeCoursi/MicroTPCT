@@ -54,3 +54,14 @@ df_target = pd.DataFrame({
 print(df_target)
 
 
+from microtpct.core.match_find import run_find
+
+matching_results = run_find(target_db, query_db)
+
+print(matching_results.matches_for_query("Q001721"))
+
+print(matching_results.n_unique_targets_for_query("Q001721"))
+
+print([qid for qid in query_db.ids if matching_results.n_unique_targets_for_query(qid) > 1])
+
+print(matching_results.peptides_with_no_match(query_db.ids))
