@@ -22,3 +22,6 @@ Thumbs.db
 *.egg-info/
 build/
 dist/
+
+# DATA
+raw_data/
