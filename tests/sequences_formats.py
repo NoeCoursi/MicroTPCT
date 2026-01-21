@@ -1,5 +1,5 @@
 from microtpct.core.sequences import ProteinSequence, PeptideSequence
-from microtpct.core.registry import PeptideDatabase
+from microtpct.core.databases import PeptideDatabase
 
 # Creates protein
 prot = ProteinSequence(
