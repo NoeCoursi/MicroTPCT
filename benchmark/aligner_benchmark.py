@@ -43,7 +43,7 @@ patterns_multiple = ["A", "B", "C", "ABC", "BC", "AB"]
 
 
 # Liste des fonctions à tester
-from bench_functions import aho_corasick_search, boyer_moore_search, knuth_morris_pratt_search
+from benchmark.bench_functions_old import aho_corasick_search, boyer_moore_search, knuth_morris_pratt_search
 
 
 

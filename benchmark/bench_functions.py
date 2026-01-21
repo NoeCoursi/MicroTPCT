@@ -2,161 +2,169 @@
 Functions to benchmark
 Put this script in the benchmark folder
 """
-# Example functions to benchmark
-def sort_list(n):
-    data = list(range(n))
-    data.reverse()
-    return sorted(data)
-def sort_dict(d):
-    # si d est un dict, prendre la clé "size"
-    if isinstance(d, dict):
-        d = d.get("size", 0)
-    data = list(range(d))
-    data.reverse()
-    return sorted(data)
-def fibonacci_iter(n):
-    a, b = 0, 1
-    for _ in range(n):
-        a, b = b, a+b
-    return a
+# Functions to benchmark
+import ahocorasick
+from ahocorasick_rs import AhoCorasick
+import subprocess
+import tempfile
+import os
+import shutil as sh
 
 
-# String matching algorithms
-def aho_corasick_search(text, patterns):
-    from ahocorasick import Automaton
 
-    A = Automaton()
-    for idx, pattern in enumerate(patterns):
-        A.add_word(pattern, (idx, pattern))
+## Aho-Corasick
+def run_ahocorasick_mem(peptides, proteome):
+    """
+    peptides : list[str]
+    proteome : list[(protein_id, sequence)]
+    """
+    # Build automaton
+    A = ahocorasick.Automaton()
+    for i, pep in enumerate(peptides):
+        A.add_word(pep, (i, pep))
     A.make_automaton()
+    # Prepare results dict: peptide -> list of (protein_id, position)
+    results = {pep: [] for pep in peptides}
 
-    results = []
-    for end_index, (idx, pattern) in A.iter(text):
-        start_index = end_index - len(pattern) + 1
-        results.append((start_index, end_index, pattern))
-    return results
-
-def boyer_moore_search(text, pattern):
-    m = len(pattern)
-    n = len(text)
-
-    # Preprocess the pattern to create the bad character table
-    bad_char = [-1] * 256
-    for i in range(m):
-        bad_char[ord(pattern[i])] = i
-
-    results = []
-    s = 0  # s is shift of the pattern with respect to text
-    while s <= n - m:
-        j = m - 1
-
-        while j >= 0 and pattern[j] == text[s + j]:
-            j -= 1
-
-        if j < 0:
-            results.append(s)
-            s += (m - bad_char[ord(text[s + m])] if s + m < n else 1)
-        else:
-            s += max(1, j - bad_char[ord(text[s + j])])
+    # Scan proteome and record matches
+    for protein_id, seq in proteome:
+        seq = str(seq)
+        for end_idx, (i, pep) in A.iter(seq):
+            start = end_idx - len(pep) + 1
+            results.setdefault(pep, []).append((protein_id, start))
     return results
 
 
-from Bio import SeqIO
-import pybmoore
-
-#from Basile
-def match_boyermoore(
-        query_path: str,
-        target_path: str) -> dict:
-    
+## Aho-Corasick RS
+def run_ahocorasick_rs_mem(peptides, proteome):
     """
-    Takes in argument a peptide file.fa and a target file.fa
-    usage python3 boyer_moore query.fa target.fa
-
-    returns : 
-        matching_dict = {
-            "matched": [],
-            "non_matched": []
-        }
-
+    peptides : list[str]
+    proteome : list[(protein_id, sequence)]
     """
-        
-    matching_dict = {
-        "matched": [],
-        "non_matched": []
-    }
+    ac = AhoCorasick(peptides)
 
-    # Boyer Moore est plus optimisé pour des grandes séquences
-    full_target = "".join(str(record.seq) for record in SeqIO.parse(target_path, "fasta"))
+    results = {pep: [] for pep in peptides}
 
+    for protein_id, seq in proteome:
+        matches = ac.find_matches_as_indexes(seq, overlapping=True)
+        for pat_idx, start, end in matches:
+            pep = peptides[pat_idx]
+            results[pep].append((protein_id, start))
 
-    with open(query_path) as fh:
-        for record in SeqIO.parse(fh, "fasta"):
-            print(record.id)
-            matches = pybmoore.search(str(record.seq), full_target)
-            if len(matches) > 0 :
-                matching_dict["matched"].append(record.id)
-            else :
-                matching_dict["non_matched"].append(record.id)
-
-
-
-#matching_dict = match_query_to_target(query_path, target_path)
-#print(matching_dict)
-
-# to benchmark with equivalent parameters
-def match_boyermoore_text(text: str, patterns: list[str]) -> dict:
-    matching_dict = {
-        "matched": [],
-        "non_matched": []
-    }
-
-    for i, pattern in enumerate(patterns):
-        matches = pybmoore.search(pattern, text)
-        if matches:
-            matching_dict["matched"].append(i)
-        else:
-            matching_dict["non_matched"].append(i)
-
-    return matching_dict
-
-
-
-def knuth_morris_pratt_search(text, pattern):
-    m = len(pattern)
-    n = len(text)
-
-    # Preprocess the pattern to create the longest prefix-suffix (LPS) array
-    lps = [0] * m
-    j = 0  # length of previous longest prefix suffix
-    i = 1
-    while i < m:
-        if pattern[i] == pattern[j]:
-            j += 1
-            lps[i] = j
-            i += 1
-        else:
-            if j != 0:
-                j = lps[j - 1]
-            else:
-                lps[i] = 0
-                i += 1
-
-    results = []
-    i = 0  # index for text
-    j = 0  # index for pattern
-    while i < n:
-        if pattern[j] == text[i]:
-            i += 1
-            j += 1
-
-        if j == m:
-            results.append(i - j)
-            j = lps[j - 1]
-        elif i < n and pattern[j] != text[i]:
-            if j != 0:
-                j = lps[j - 1]
-            else:
-                i += 1
     return results
 
+## Naive matching with str.find
+def run_find_mem(peptides, proteome):
+    """
+    peptides : list[str]
+    proteome : list[(protein_id, sequence)]
+    """
+    # Prepare results dict: peptide -> list of (protein_id, position)
+    results = {pep: [] for pep in peptides}
+
+    for protein_id, seq in proteome:
+        seq = str(seq)
+        for pep in peptides:
+            start = 0
+            while True:
+                start = seq.find(pep, start)
+                if start == -1:
+                    break
+                results.setdefault(pep, []).append((protein_id, start))
+                start += 1
+
+    return results
+
+# Naive matching with str.find
+def run_in_mem(peptides, proteome):
+    """
+    peptides : list[str]
+    proteome : list[(protein_id, sequence)]
+    """
+    # Prepare results dict: peptide -> list of protein_ids where peptide occurs
+    results = {pep: [] for pep in peptides}
+
+    for protein_id, seq in proteome:
+        seq = str(seq)
+        for pep in peptides:
+            if pep in seq:
+                results.setdefault(pep, []).append(protein_id)
+                
+    return results
+
+
+# BLAST was benchmarked separately as an external, disk-based tool.
+# Its execution time reflects a full pipeline including database construction and I/O, and is therefore not directly 
+# comparable to in-memory string matching algorithms
+
+## BLAST
+def run_blast_mem(peptides, proteome_fasta_path):
+    """
+    peptides : list[str]
+    proteome_fasta_path : str (FASTA file)
+    """
+    # Ensure BLAST+ binaries are available
+    if sh.which("makeblastdb") is None or sh.which("blastp") is None:
+        raise RuntimeError("makeblastdb and blastp must be installed and on PATH")
+
+    # Prepare results dict: peptide -> list of (protein_id, position)
+    results = {pep: [] for pep in peptides}
+
+    # Create temporary workspace
+    tmpdir = tempfile.mkdtemp(prefix="blast_tmp_")
+    try:
+        # Write peptide queries to a FASTA file; use numeric qids to map back
+        queries_fa = os.path.join(tmpdir, "peptides.fa")
+        with open(queries_fa, "w") as qf:
+            for i, pep in enumerate(peptides):
+                qf.write(f">{i}\n{pep}\n")
+        #with open(queries_fa, "r") as qf: # debug
+        #    print("Contenu de peptides.fa :", qf.read())   
+
+        # Make blast db from proteome_file
+        db_prefix = os.path.join(tmpdir, "prot_db")
+        cmd_make = ["makeblastdb", "-in", proteome_fasta_path, "-dbtype", "prot", "-out", db_prefix]
+        result = subprocess.run(cmd_make, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+      
+        # Run blastp (short-task) with tabular output including sstart/send, percent identity and alignment length
+        outfmt = "6 qseqid sseqid pident length mismatch sstart send"
+        cmd_blast = [
+            "blastp",
+            "-query", queries_fa,
+            "-db", db_prefix,
+            "-task", "blastp-short",
+            "-outfmt", outfmt,
+            "-max_target_seqs", "100000",
+            # On enlève -perc_identity 100
+        ]
+        proc = subprocess.run(cmd_blast, check=False, capture_output=True, text=True)
+        #print("blastp stdout:", proc.stdout) #debug
+        #print("blastp stderr:", proc.stderr) #debug
+        if proc.returncode != 0:
+            raise RuntimeError(f"blastp failed with return code {proc.returncode}")
+
+        blast_out = proc.stdout
+
+        # Parse blast output lines
+        for line in blast_out.splitlines():
+            if not line:
+                continue
+            qseqid, sseqid, pident, alen, mismatch, sstart, send = line.split()
+            pat_idx = int(qseqid)
+            pep = peptides[pat_idx]
+            # Only accept full-length exact matches (pident 100 and alignment length == peptide length and 0 mismatches)
+            if float(pident) != 100.0:
+                continue
+            if int(mismatch) != 0:
+                continue
+            if int(alen) != len(pep):
+                continue
+
+            sstart_i = int(sstart) - 1
+            send_i = int(send) - 1
+            start0 = min(sstart_i, send_i)
+            results.setdefault(pep, []).append((sseqid, start0))
+
+        return results
+    finally:
+        sh.rmtree(tmpdir)
