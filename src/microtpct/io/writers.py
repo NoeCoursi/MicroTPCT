@@ -3,16 +3,12 @@
 # 
 
 # The output mipep.csv file contains the following columns:
-# peptide_ID: the ID of the peptide that was created at the start
+# micro_peptide_ID: the ID of the peptide that was created at the start
+# peptide_ID: the ID of the canonical protein's peptide to which it matched
 # peptide_seq: the peptidic sequence of the micropeptide
-
-# The output matched_peptides.csv file contains the following columns:
-# peptide_ID: the ID of the peptide that was created at the start
-# peptide_seq: the peptidic sequence of the micropeptide
-# protein_ID : the ID of the protein in which the peptide was found
+# J_peptide_seq: the peptidic sequence of the micropeptide with Isoleucine instead of Leucine
+# protein_ID : the ID of the canonicalprotein
 # start_position : the starting position of the peptide in the protein sequence it matched with
-
-# ? idée : similar_peptides: number of similar peptides found in the proteome (longuer ones with complete overlap)
 
 import csv
 import pandas as pd
@@ -24,11 +20,12 @@ import pandas as pd
     # les fonctions créées dans alignemnt/algorithme 
 
 
-# put it as a dataframe 
-algorithm_output = pd.DataFrame(algorithm_output)
-# write the micropeptides to a CSV file
-(algorithm_output[['peptide_ID', 'peptide_seq']]).to_csv(mipep.csv)
-# write the peptides that matched proteins to a CSV file
-(algorithm_output[['peptide_ID', 'peptide_seq',
-                   'protein_ID','start_position']]).to_csv(matched_peptides.csv)
+def write_micropeptides_to_csv(algorithm_output, output_file="microTPCT.csv"):
+    # put it as a dataframe 
+    algorithm_output = pd.DataFrame(algorithm_output)
+    # write the micropeptides to a CSV file "microTPCT.csv"
+    (algorithm_output[['micro_peptide_ID', 'peptide_ID',
+                       'peptide_seq','J_peptide_seq',
+                       'protein_ID', 'start_position']]).to_csv(output_file)
+    return None
 
