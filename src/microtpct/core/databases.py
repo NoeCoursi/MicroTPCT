@@ -7,7 +7,7 @@ sequences by accession or other criteria.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 
 @dataclass
@@ -28,21 +28,26 @@ class SequenceDB:
         Number of sequences in the database.
     """
 
-    sequences: List[str]
-    ambiguous_il_sequence: List[str]
+    ids: List[str] # pipeline IDs (Q000001, T000001, …)
+    sequences: List[str] # original sequences
+    ambiguous_il_sequence: List[str] # # I/L replaced by J
     accessions: List[str]
 
     def __post_init__(self):
-        if len(self.sequences) != len(self.accessions):
-            raise ValueError(
-                "sequences and accessions must have the same length "
-                f"(got {len(self.sequences)} and {len(self.accessions)})"
-            )
+        if not (len(self.ids) == len(self.accessions) == len(self.ambiguous_il_sequence) == len(self.sequences)):
+            raise ValueError("All fields must have the same length")
 
     @property
     def size(self) -> int:
-        """Return the number of sequences in the database."""
         return len(self.sequences)
+
+    def unique_accessions(self) -> set[str]:
+        "Return a set of all uniques accessions in database."
+        return {acc for acc in self.accessions if acc is not None}
+
+    def n_unique_accessions(self) -> int:
+        "Return number of uniques accessions."
+        return len(self.unique_accessions())
 
 
 class TargetDB(SequenceDB):
