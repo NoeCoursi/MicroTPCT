@@ -14,6 +14,8 @@ FASTA2=$2
 TMP_FASTA2=$(mktemp)
 trap 'rm -f "$TMP_FASTA2"' EXIT
 
+
+# Linearize target fasta file
 LC_ALL=C awk '
   /^>/ {
     if (seq) print header "\t" seq
@@ -25,8 +27,7 @@ LC_ALL=C awk '
   END { if (seq) print header "\t" seq }
 ' "$FASTA2" > "$TMP_FASTA2"
 
-echo "query_header,target_header,position"
-
+echo "query_header;target_header;position"
 
 LC_ALL=C awk '
   /^>/ {
@@ -38,7 +39,7 @@ LC_ALL=C awk '
   { seq=seq $0 }
   END { if (seq) print header "\t" seq }
 ' "$FASTA1" |
-while IFS=$'\t' read -r h1 seq1; do
+while IFS=$'\t' read -r h1 seq1; do #grep single seq to full target fasta
 
     grep -F "$seq1" "$TMP_FASTA2" |
     awk -F'\t' -v q="$h1" -v s="$seq1" '
@@ -46,5 +47,4 @@ while IFS=$'\t' read -r h1 seq1; do
         pos=index($2, s)-1
         if(pos>=0) print q";"$1";"pos
       } END { if(NR==0) print q";.;." }'
-
 done
