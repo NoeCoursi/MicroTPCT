@@ -1,42 +1,82 @@
 #!/usr/bin/env python3
 
 import sys
-import csv
-import pybmoore
+from multiprocessing import Pool, cpu_count
+from Bio import SeqIO  # type: ignore
+import pybmoore  # type: ignore
 
-from Bio import SeqIO #type: ignore
-
-
-
-def main(query, target):
-    query_fasta = sys.argv[1]
-    target_fasta = sys.argv[2]
+BIG_TEXT = None
+POS_TO_TARGET = None
+SEPARATOR = "#"
 
 
+def build_big_text(target_fasta):
+    """
+    Concatène toutes les targets dans un seul texte
+    et construit un mapping position -> (target_id, offset)
+    """
+    big_chunks = []
+    pos_map = []
+    current_pos = 0
 
-    output_file = "output.csv"
-    with open(output_file, "w", newline="") as csvfile:
-        writer = csv.writer(csvfile, delimiter=";")
-        writer.writerow(["query_header", "target_header", "position"])
+    for rec in SeqIO.parse(target_fasta, "fasta"):
+        seq = str(rec.seq)
+        big_chunks.append(seq)
 
-        for qrec in SeqIO.parse(query_fasta, "fasta"):
-            print(f"{qrec.id} / 200")
-            found_match = False
-            for trec in SeqIO.parse(target_fasta, "fasta"):
-                # pybmoore.search retourne liste de (start, end) pour tous les matches
-                matches = pybmoore.search(str(qrec.seq),str(trec.seq))
-                if matches:
-                    for start, _ in matches:
-                        writer.writerow([qrec.id, trec.id, start])
-                    found_match = True
-            if not found_match:
-                writer.writerow([qrec.id, "", ""])
+        pos_map.append((current_pos, current_pos + len(seq), rec.id))
 
-    print(f"CSV généré avec succès : {output_file}")
+        current_pos += len(seq)
+        big_chunks.append(SEPARATOR)
+        current_pos += len(SEPARATOR)
+
+    return "".join(big_chunks), pos_map
+
+
+def init_worker(big_text, pos_map):
+    global BIG_TEXT, POS_TO_TARGET
+    BIG_TEXT = big_text
+    POS_TO_TARGET = pos_map
+
+
+def locate_target(global_pos):
+    """Convertit une position globale en (target_id, local_pos)"""
+    for start, end, tid in POS_TO_TARGET:
+        if start <= global_pos < end:
+            return tid, global_pos - start
+    return None, None
+
+
+def process_query(query):
+    qrec_id, qseq = query
+    hits = []
+
+    matches = pybmoore.search(qseq, BIG_TEXT)
+
+    if matches:
+        for start, _ in matches:
+            tid, local_pos = locate_target(start)
+            if tid is not None:
+                hits.append((tid, local_pos))
+
+    return qrec_id, hits
+
+def main(query_fasta, target_fasta):
+    big_text, pos_map = build_big_text(target_fasta)
+    queries = [(rec.id, str(rec.seq)) for rec in SeqIO.parse(query_fasta, "fasta")]
+
+    with Pool(
+        processes=cpu_count(),
+        initializer=init_worker,
+        initargs=(big_text, pos_map),
+    ) as pool:
+        all_results = pool.map(process_query, queries)
+
+    print(dict(all_results))
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print(f"Usage: {sys.argv[0]} fasta1 fasta2", file=sys.stderr)
+        print(f"Usage: {sys.argv[0]} query.fasta target.fasta", file=sys.stderr)
         sys.exit(1)
-    main(sys.argv[1], sys.argv[2])
 
+    main(sys.argv[1], sys.argv[2])
