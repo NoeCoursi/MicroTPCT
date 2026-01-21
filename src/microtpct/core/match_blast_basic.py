@@ -39,18 +39,12 @@ def run_blast(peptides, proteome_file):
         # Run blastp (short-task) with tabular output including sstart/send, percent identity and alignment length
         outfmt = "6 qseqid sseqid pident length mismatch sstart send"
         cmd_blast = [
-            "blastp", # blast program
-            "-query", queries_fa, # peptide queries
-            "-db", db_prefix, # use the created db
-            "-task", "blastp-short", # optimized for short sequences
-            "-seg", "no", # disable low-complexity filtering to allow small peptides
-            "-comp_based_stats", "0", # disable compositional adjustments
-            "-soft_masking", "false", # disable soft masking
-            "-outfmt", outfmt, # tabular output with selected fields
-            "-max_target_seqs", "1000000000", # very high limit to get all valid alignments
-            "-max_hsps", "1000000", # high limit to get all valid alignments
-            "-word_size", "2", # small word size for short peptides
-            "-use_sw_tback" # force use of Smith-Waterman, disable all shortcut heuristics
+            "blastp",
+            "-query", queries_fa,
+            "-db", db_prefix,
+            "-task", "blastp-short",
+            "-outfmt", outfmt,
+            "-max_target_seqs", "100000",
         ]
 
         proc = subprocess.run(cmd_blast, check=False, capture_output=True, text=True)
@@ -92,7 +86,7 @@ peptides_file = "path/to/peptides.txt"
 with open(peptides_file) as f:
     for line in f:
         peptides.append(line.strip()) 
-print(len(peptides), "peptides loaded.")
+
 
 proteome_file = "path/to/uniprotkb_proteome_UP000000803_2025_11_25.fasta"
 

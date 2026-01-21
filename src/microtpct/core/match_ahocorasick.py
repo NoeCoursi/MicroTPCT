@@ -35,10 +35,10 @@ peptides_file = "path/to/peptides.txt"
 with open(peptides_file) as f:
     for line in f:
         peptides.append(line.strip())
+print(len(peptides), "peptides loaded.")
 
 proteome_file = "path/to/uniprotkb_proteome_UP000000803_2025_11_25.fasta"
 
 print("\n=== Aho-Corasick ===")
 print(run_ahocorasick(peptides, proteome_file))
-
 
