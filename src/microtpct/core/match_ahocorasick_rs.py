@@ -1,4 +1,4 @@
-# pip install pyahocorasick-rs
+# pip install pahocorasick-rs
 
 from ahocorasick_rs import AhoCorasick
 from Bio import SeqIO
