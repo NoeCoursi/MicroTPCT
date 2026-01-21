@@ -22,8 +22,6 @@ logger = setup_logger(__name__)
 # Base validation
 
 def validate_sequence_input(seq: SequenceInput) -> None:
-    if not seq.id:
-        raise ValueError("SequenceInput.id cannot be empty.")
 
     if not seq.sequence:
         raise ValueError("SequenceInput.sequence cannot be empty.")
@@ -48,7 +46,7 @@ def validate_protein_input(prot: ProteinInput) -> None:
     if not isinstance(prot.accession, str):
         raise TypeError("ProteinInput.accession must be a string.")
 
-    validate_amino_acid_sequence(prot.sequence, obj_id=prot.accession)
+    _validate_amino_acid_sequence(prot.sequence, obj_id=prot.accession)
 
 
 # Peptide validation
@@ -67,12 +65,11 @@ def validate_peptide_input(pep: PeptideInput) -> None:
     if not isinstance(pep.accession, str):
         raise TypeError("PeptideInput.accession must be a string.")
 
-    validate_amino_acid_sequence(pep.sequence, obj_id=pep.id)
+    _validate_amino_acid_sequence(pep.sequence, obj_id=f"{pep.accession} (sequence: {pep.sequence})")
 
 
 # Internal helpers
-
-def validate_amino_acid_sequence(sequence: str, obj_id: str | None = None) -> None:
+def _validate_amino_acid_sequence(sequence: str, obj_id: str | None = None) -> None:
     invalid = set(sequence.upper()) - AMINO_ACIDS
     if invalid:
         id_info = f" for object '{obj_id}'" if obj_id else ""
