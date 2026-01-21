@@ -2,42 +2,67 @@
 Conversion utilities for MicroTPCT.
 
 This module converts validated input schemas into
-clean core biological sequence objects.
+clean core biological sequence databases objects.
 """
-
+from typing import Iterable
+from microtpct.core.databases import TargetDB, QueryDB
 from microtpct.io.schema import ProteinInput, PeptideInput
-from microtpct.core.sequences import ProteinSequence, PeptideSequence
+from microtpct.io.readers import SequenceRole
 
 
-def protein_input_to_core(prot: ProteinInput) -> ProteinSequence:
+def il_to_j(sequence: str) -> str:
+    """Replace I and L by J in a protein/peptide sequence."""
+    return sequence.replace("I", "J").replace("L", "J")
+
+
+def generate_ids(prefix: str, n: int) -> list[str]:
     """
-    Convert a validated ProteinInput into a core ProteinSequence.
-    This function assumes the input has already been validated.
+    Generate internal pipeline IDs.
     """
-    if type(prot) is not ProteinInput:
-        raise TypeError(
-            f"protein_input_to_core() expects ProteinInput, got {type(prot).__name__}"
+    width = max(6, len(str(n)))
+    return [f"{prefix}{i+1:0{width}d}" for i in range(n)]
+
+def build_database(
+    inputs: Iterable[ProteinInput | PeptideInput],
+    role: SequenceRole,
+):
+    """
+    Convert validated SequenceInput objects into a SequenceDB.
+
+    Returns
+    -------
+    TargetDB or QueryDB
+    """
+
+    sequences = []
+    ambiguous = []
+    accessions = []
+
+    for obj in inputs:
+        sequences.append(obj.sequence)
+        ambiguous.append(il_to_j(obj.sequence))
+        accessions.append(obj.accession)
+
+    n = len(sequences)
+
+    # Choose DB type and ID prefix
+    if role == SequenceRole.PROTEIN:
+        ids = generate_ids("T", n)
+        return TargetDB(
+            ids=ids,
+            sequences=sequences,
+            ambiguous_il_sequence=ambiguous,
+            accessions=accessions,
         )
 
-    return ProteinSequence(
-        id=prot.id.strip(),
-        accession=prot.accession.strip(),
-        sequence=prot.sequence.upper().strip(),
-    )
-
-
-def peptide_input_to_core(pep: PeptideInput) -> PeptideSequence:
-    """
-    Convert a validated PeptideInput into a core PeptideSequence.
-    This function assumes the input has already been validated.
-    """
-    if type(pep) is not PeptideInput:
-        raise TypeError(
-            f"peptide_input_to_core() expects PeptideInput, got {type(pep).__name__}"
+    elif role == SequenceRole.PEPTIDE:
+        ids = generate_ids("Q", n)
+        return QueryDB(
+            ids=ids,
+            sequences=sequences,
+            ambiguous_il_sequence=ambiguous,
+            accessions=accessions,
         )
 
-    return PeptideSequence(
-        id=pep.id.strip(),
-        accession=pep.accession.strip(),
-        sequence=pep.sequence.upper().strip(),
-    )
+    else:
+        raise ValueError(f"Unsupported SequenceRole: {role}")
