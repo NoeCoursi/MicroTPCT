@@ -30,11 +30,11 @@ class SequenceDB:
 
     ids: List[str] # pipeline IDs (Q000001, T000001, …)
     sequences: List[str] # original sequences
-    ambiguous_il_sequence: List[str] # # I/L replaced by J
+    ambiguous_il_sequences: List[str] # # I/L replaced by J
     accessions: List[str]
 
     def __post_init__(self):
-        if not (len(self.ids) == len(self.accessions) == len(self.ambiguous_il_sequence) == len(self.sequences)):
+        if not (len(self.ids) == len(self.accessions) == len(self.ambiguous_il_sequences) == len(self.sequences)):
             raise ValueError("All fields must have the same length")
 
     @property
