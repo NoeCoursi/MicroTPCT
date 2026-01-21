@@ -94,8 +94,7 @@ def run_in_mem(peptides, proteome):
 
 
 # BLAST was benchmarked separately as an external, disk-based tool.
-# Its execution time reflects a full pipeline including database construction and I/O, and is therefore not directly 
-# comparable to in-memory string matching algorithms
+# Its execution time reflects a full pipeline including database construction and I/O, and is therefore not directly comparable to in-memory string matching algorithms
 
 ## BLAST
 def run_blast_mem(peptides, proteome_fasta_path):
