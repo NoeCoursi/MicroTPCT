@@ -21,7 +21,6 @@ class SequenceInput:
 
     This class should not be instantiated directly for user inputs.
     """
-    id: str
     sequence: str = field(repr=False)  # Avoid printing sequence when object is called
 
 

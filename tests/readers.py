@@ -3,7 +3,7 @@ from pathlib import Path
 
 proteome_file_path = Path(r"C:\Users\huawei\Downloads\uniprotkb_proteome_UP000000803_2025_11_25.fasta")
 # peptide_file_path = Path(r"C:\Users\huawei\Desktop\Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613.xlsx")
-peptide_file_path = Path(r"C:\Users\huawei\Desktop\Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613 - Best PSM from protein sets.csv")
+peptide_file_path = Path(r"C:\Users\huawei\Desktop\Liste_peptides.xlsx")
 
 
 dico = {}
@@ -12,7 +12,7 @@ dico = {}
 #     dico[protein.id] = protein
 
 for peptide in read_file(peptide_file_path, role=SequenceRole.PEPTIDE):
-    dico[peptide.id] = peptide
+    dico[peptide.accession] = peptide
 
 
 print(dico)
