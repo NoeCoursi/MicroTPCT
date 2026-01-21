@@ -34,7 +34,6 @@ def run_ahocorasick_mem(peptides, proteome):
             results.setdefault(pep, []).append((protein_id, start))
     return results
 
-
 ## Aho-Corasick RS
 def run_ahocorasick_rs_mem(peptides, proteome):
     """
@@ -95,7 +94,6 @@ def run_in_mem(peptides, proteome):
 
 # BLAST was benchmarked separately as an external, disk-based tool.
 # Its execution time reflects a full pipeline including database construction and I/O, and is therefore not directly comparable to in-memory string matching algorithms
-
 ## BLAST
 def run_blast_mem(peptides, proteome_fasta_path):
     """
@@ -167,3 +165,69 @@ def run_blast_mem(peptides, proteome_fasta_path):
         return results
     finally:
         sh.rmtree(tmpdir)
+
+
+# Boyer-Moore
+from multiprocessing import Pool, cpu_count
+from Bio import SeqIO
+import pybmoore
+
+SEPARATOR = "#"
+BIG_TEXT = None
+POS_TO_TARGET = None
+
+# --- fonctions nécessaires pour le Boyer-Moore parallèle ---
+def build_big_text(target_fasta):
+    big_chunks = []
+    pos_map = []
+    current_pos = 0
+    for rec in SeqIO.parse(target_fasta, "fasta"):
+        seq = str(rec.seq)
+        big_chunks.append(seq)
+        pos_map.append((current_pos, current_pos + len(seq), rec.id))
+        current_pos += len(seq)
+        big_chunks.append(SEPARATOR)
+        current_pos += len(SEPARATOR)
+    return "".join(big_chunks), pos_map
+
+def init_worker(big_text, pos_map):
+    global BIG_TEXT, POS_TO_TARGET
+    BIG_TEXT = big_text
+    POS_TO_TARGET = pos_map
+
+def locate_target(global_pos):
+    for start, end, tid in POS_TO_TARGET:
+        if start <= global_pos < end:
+            return tid, global_pos - start
+    return None, None
+
+def process_query(query):
+    qrec_id, qseq = query
+    hits = []
+    matches = pybmoore.search(qseq, BIG_TEXT)
+    for start, _ in matches:
+        tid, local_pos = locate_target(start)
+        if tid is not None:
+            hits.append((tid, local_pos))
+    return qrec_id, hits
+
+# --- fonction à benchmarker ---
+def run_boyermoore_parallel_mem(queries, target_fasta):
+    """
+    queries : list[(query_id, query_sequence)]
+    target_fasta : str (path to fasta)
+
+    Returns:
+        dict: query_id -> list[(target_id, local_pos)]
+    """
+    big_text, pos_map = build_big_text(target_fasta)
+
+    with Pool(
+        processes=cpu_count(),
+        initializer=init_worker,
+        initargs=(big_text, pos_map),
+    ) as pool:
+        results = pool.map(process_query, queries)
+
+    return dict(results)
+
