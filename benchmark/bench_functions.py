@@ -2,7 +2,7 @@
 Functions to benchmark
 Put this script in the benchmark folder
 """
-# Functions to benchmark
+# Necessary packages
 import ahocorasick
 from ahocorasick_rs import AhoCorasick
 import subprocess
@@ -11,7 +11,7 @@ import os
 import shutil as sh
 
 
-
+# Functions to benchmark
 ## Aho-Corasick
 def run_ahocorasick_mem(peptides, proteome):
     """
