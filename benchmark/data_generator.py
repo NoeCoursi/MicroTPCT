@@ -517,8 +517,7 @@ if __name__ == "__main__":
         redundancy_rate = 0.5,
         mutation_rate = 0.2,
 
-        seed = 123,
-        save_config_path="test.json"
+        seed = 123
     )
 
     print("=== TARGET DATABASE ===")
