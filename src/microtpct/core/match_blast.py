@@ -89,8 +89,8 @@ def parse_blast_output(blast_out: str) -> List[Match]:
         if not line:
             continue
         # skip BLAST comment/header lines
-            if line.startswith("#"):
-                continue
+        if line.startswith("#"):
+            continue
         qseqid, sseqid, pident, alen, mismatch, gapopen, qlen, sstart, send = line.split()
         #pat_idx = int(qseqid)
         #pep = peptides[pat_idx]
