@@ -1,14 +1,25 @@
 """
 Functions to benchmark
 Put this script in the benchmark folder
+
+Global architecture:
+fn(peptides, proteome) -> results
+    peptides = list[str]
+    proteome = list[(protein_id, sequence)]
+
 """
 # Necessary packages
+from unittest import result
 import ahocorasick
 from ahocorasick_rs import AhoCorasick
 import subprocess
 import tempfile
 import os
 import shutil as sh
+import tempfile
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+import platform
 
 
 # Functions to benchmark
@@ -231,3 +242,163 @@ def run_boyermoore_parallel_mem(queries, target_fasta):
 
     return dict(results)
 
+# Grawk 
+import pandas as pd
+from io import StringIO
+from pathlib import Path
+import tempfile
+
+
+
+def run_grawk_mem(peptides, proteome):
+    """
+    peptides : list[str]
+    proteome : list[(protein_id, sequence)]
+
+    Returns:
+        dict : peptide -> liste de protein_ids
+    """
+    core_path = Path(__file__).resolve().parent  # dossier du script
+
+    # Créer un dossier temporaire pour les fichiers FASTA
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Fichier peptides temporaire
+        query_fasta = Path(tmpdir) / "peptides.fa"
+        with open(query_fasta, "w") as f:
+            for i, pep in enumerate(peptides):
+                f.write(f">{i}\n{pep}\n")
+
+        # Fichier proteome temporaire
+        target_fasta = Path(tmpdir) / "proteome.fa"
+        with open(target_fasta, "w") as f:
+            for pid, seq in proteome:
+                f.write(f">{pid}\n{seq}\n")
+
+        # Appel du script bash
+        result = subprocess.run(
+            [f"{core_path}/grawk_match.sh", query_path, target_path],
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(f"grawk_match.sh failed:\n{result.stderr}")
+
+        # Lire le CSV renvoyé
+        df = pd.read_csv(StringIO(result.stdout), sep=';')
+
+        # Convertir en dict : peptide -> liste de protein_ids
+        grawk_dict = {}
+        for _, row in df.iterrows():
+            pep = row['peptide']      # adapter si nom colonne différent
+            prot = row['protein_id']  # adapter si nom colonne différent
+            grawk_dict.setdefault(pep, []).append(prot)
+
+        return grawk_dict
+
+# Alternative: Use WSL to run bash scripts on Windows
+def run_grawk_mem_wsl(peptides, proteome):
+    """
+    Run grawk_match.sh using WSL on Windows
+    
+    _______________________________________
+
+    peptides : list[str]
+    proteome : list[(protein_id, sequence)]
+
+    Returns:
+        dict : peptide -> liste de protein_ids
+    """   
+    # Create temp FASTA files
+    query_fasta = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.fasta')
+    target_fasta = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.fasta')
+    
+    for pep in peptides:
+        query_fasta.write(f">{pep}\n{pep}\n")
+    
+    for pid, seq in proteome:
+        target_fasta.write(f">{pid}\n{seq}\n")
+    
+    query_fasta.close()
+    target_fasta.close()
+    
+    core_path = r"c:\Users\Hp\Desktop\biocomp_repository\MicroTPCT\benchmark"  # Adjust to your path
+    
+    # Run via WSL
+    result = subprocess.run(
+        ["wsl", "bash", f"{core_path}/grawk_match.sh", query_fasta.name, target_fasta.name],
+        capture_output=True,
+        text=True
+    )
+    
+    if result.returncode != 0:
+        raise RuntimeError(f"grawk_match.sh failed:\n{result.stderr}")
+    
+    return result.stdout
+
+
+
+
+
+import tempfile
+import subprocess
+from pathlib import Path
+
+
+def run_grawk_mem2(peptides, proteome):
+    """
+    peptides : list[str]
+    proteome : list[(protein_id, sequence)]
+    """
+
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    # 1️⃣ écrire peptides -> FASTA temporaire
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".fa", delete=False) as qf:
+        for i, pep in enumerate(peptides):
+            qf.write(f">{i}\n{pep}\n")
+        query_path = qf.name
+
+    # 2️⃣ écrire proteome -> FASTA temporaire
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".fa", delete=False) as tf:
+        for pid, seq in proteome:
+            tf.write(f">{pid}\n{seq}\n")
+        target_path = tf.name
+
+    try:
+        # 3️⃣ appel du script grawk
+        result = subprocess.run(
+            ["bash", "grawk_match.sh", query_path, target_path],
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr)
+
+        # 4️⃣ parser stdout → dictionnaire
+        results = {}
+
+        for line in result.stdout.splitlines():
+            line = line.strip()
+
+            if not line or line.startswith("#"):
+                continue
+
+            parts = line.split(";")
+            if len(parts) != 3:
+                continue
+
+            peptide, protein, pos = parts
+            if not pos.isdigit():
+                continue
+
+            results.setdefault(peptide, []).append((protein, int(pos)))
+
+        return results
+
+    finally:
+        Path(query_path).unlink(missing_ok=True)
+        Path(target_path).unlink(missing_ok=True)
