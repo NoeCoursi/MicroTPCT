@@ -3,8 +3,9 @@ from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.converters import *
 from pathlib import Path
 
-peptide_file_path = Path(r"C:\Users\huawei\Desktop\Liste_peptides.xlsx")
-proteome_file_path = Path(r"C:\Users\huawei\Downloads\uniprotkb_proteome_UP000000803_2025_11_25.fasta")
+#peptide_file_path = Path("/home/ambroiz/Bureau/BIOCOMP/DEFI_BIOINFO/Liste_peptides.xlsx")
+peptide_file_path = Path("/home/ambroiz/Bureau/BIOCOMP/DEFI_BIOINFO/Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613.xlsx")
+proteome_file_path = Path("/home/ambroiz/Bureau/BIOCOMP/DEFI_BIOINFO/uniprotkb_proteome_UP000000803_2025_11_25.fasta")
 
 
 def mini_pipeline(path, role: SequenceRole):
@@ -54,3 +55,21 @@ df_target = pd.DataFrame({
 print(df_target)
 
 
+# from microtpct.core.match_find import run_find
+# from microtpct.core.match_ahocorasick import run_ahocorasick
+# from microtpct.core.match_ahocorasick_rs import run_ahocorasick_rs
+from microtpct.core.match_blast_basic import run_blast
+
+
+# matching_results = run_ahocorasick(target_db, query_db)
+# matching_results = run_ahocorasick(target_db, query_db)
+# matching_results = run_ahocorasick_rs(target_db, query_db)
+matching_results = run_blast(target_db, query_db)
+
+print(matching_results.matches_for_query("Q001721"))
+
+print(matching_results.n_unique_targets_for_query("Q001721"))
+
+print([qid for qid in query_db.ids if matching_results.n_unique_targets_for_query(qid) > 1])
+
+print(matching_results.peptides_with_no_match(query_db.ids))
