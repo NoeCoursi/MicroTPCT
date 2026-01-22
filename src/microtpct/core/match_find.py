@@ -1,3 +1,5 @@
+from typing import List
+
 from microtpct.core.databases import TargetDB, QueryDB
 from microtpct.core.results import Match, MatchResult
 
@@ -13,7 +15,7 @@ def run_find(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
             peptide_id -> list of (target_id, position)
     """
 
-    matches: list[Match] = []
+    matches: List[Match] = []
 
     # Loop over targets
     for t_id, t_seq in zip(target_db.ids, target_db.ambiguous_il_sequences):
