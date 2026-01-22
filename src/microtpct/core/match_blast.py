@@ -10,6 +10,9 @@ import shutil as sh
 # sudo apt install ncbi-blast+
 
 ## to do : replace input (proteins and peptides) with apropriate classes
+# ne pas autoriser les gap -> gapopen dans le outfmt : ... length mismatch gapopen ...
+# vérifier que l’alignement couvre 100% du peptide : outfmt = "6 qseqid sseqid pident length mismatch gapopen qlen sstart send"
+
 
 # Use local BLAST+ (makeblastdb + blastp) to find exact peptide matches in proteins.
 def run_blast(peptides, proteome_file):
@@ -37,7 +40,8 @@ def run_blast(peptides, proteome_file):
         result = subprocess.run(cmd_make, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         # Run blastp (short-task) with tabular output including sstart/send, percent identity and alignment length
-        outfmt = "6 qseqid sseqid pident length mismatch sstart send"
+        # Use correct outfmt tokens: sseqid, length, sstart/send
+        outfmt = "6 qseqid sseqid pident length mismatch gapopen qlen sstart send"
         cmd_blast = [
             "blastp", # blast program
             "-query", queries_fa, # peptide queries
@@ -63,16 +67,25 @@ def run_blast(peptides, proteome_file):
         for line in blast_out.splitlines():
             if not line:
                 continue
-            qseqid, sseqid, pident, alen, mismatch, sstart, send = line.split()
+            # skip BLAST comment/header lines
+            if line.startswith("#"):
+                continue
+
+            qseqid, sseqid, pident, alen, mismatch, gapopen, qlen, sstart, send = line.split()
             pat_idx = int(qseqid)
             pep = peptides[pat_idx]
-            # Only accept full-length exact matches (pident 100 and alignment length == peptide length and 0 mismatches)
+            # Only accept full-length exact matches (pident 100 and alignment length == peptide length and 0 mismatches and 0 gap)
             if float(pident) != 100.0:
                 continue
             if int(mismatch) != 0:
                 continue
             if int(alen) != len(pep):
                 continue
+            if int(gapopen) != 0:
+                continue
+            if int(alen) != int(qlen):
+                continue
+
 
             sstart_i = int(sstart) - 1
             send_i = int(send) - 1
@@ -84,17 +97,19 @@ def run_blast(peptides, proteome_file):
         sh.rmtree(tmpdir)
 
 
+
 ### test:
 # Load peptides: text file with one peptide sequence per line
 peptides = []
-peptides_file = "path/to/peptides.txt"
+peptides_file = "/home/ambroiz/Bureau/BIOCOMP/DEFI_BIOINFO/peptides.txt"
 
 with open(peptides_file) as f:
     for line in f:
         peptides.append(line.strip()) 
-print(len(peptides), "peptides loaded.")
 
-proteome_file = "path/to/uniprotkb_proteome_UP000000803_2025_11_25.fasta"
+
+proteome_file = "/home/ambroiz/Bureau/BIOCOMP/DEFI_BIOINFO/uniprotkb_proteome_UP000000803_2025_11_25.fasta"
 
 print("\n=== Local BLAST ===")
 print(run_blast(peptides, proteome_file))
+

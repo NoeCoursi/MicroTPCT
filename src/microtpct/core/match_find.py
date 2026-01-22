@@ -1,37 +1,34 @@
-from Bio import SeqIO
+from typing import List
 
-## to do : replace input (proteins and peptides) with apropriate classes
+from microtpct.core.databases import TargetDB, QueryDB
+from microtpct.core.results import Match, MatchResult
 
 # Naive matching with str.find
-def run_find(peptides, proteome_file):
-    # Prepare results dict: peptide -> list of (protein_id, position)
-    results = {pep: [] for pep in peptides}
+def run_find(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
+    """
+    Naive exact matching using str.find on ambiguous I/L sequences.
 
-    for record in SeqIO.parse(proteome_file, "fasta"):
-        seq = str(record.seq)
-        for pep in peptides:
-            start = 0
-            while True:
-                start = seq.find(pep, start)
-                if start == -1:
-                    break
-                results.setdefault(pep, []).append((record.id, start))
-                start += 1
+    Returns
+    -------
+    results : dict
+        Mapping:
+            peptide_id -> list of (target_id, position)
+    """
 
-    return results
+    matches: List[Match] = []
 
+    # Loop over targets
+    for t_id, t_seq in zip(target_db.ids, target_db.ambiguous_il_sequences):
 
-### test:
-# Load peptides: text file with one peptide sequence per line
-peptides = []
-peptides_file = "path/to/peptides.txt"
+        # Loop over peptides
+        for q_id, q_seq in zip(query_db.ids, query_db.ambiguous_il_sequences):
 
-with open(peptides_file) as f:
-    for line in f:
-        peptides.append(line.strip()) 
+            start = t_seq.find(q_seq)
+            if start != -1:
+                matches.append(Match(
+                    query_id=q_id,
+                    target_id=t_id,
+                    position=start
+                ))
 
-
-proteome_file = "path/to/uniprotkb_proteome_UP000000803_2025_11_25.fasta"
-
-print("\n=== Naive find() ===")
-print(run_find(peptides, proteome_file))
+    return MatchResult(matches)

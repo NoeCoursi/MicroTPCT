@@ -1,44 +1,40 @@
-# pip install pyahocorasick
 import ahocorasick
-from Bio import SeqIO
+from typing import List
 
-## to do : replace input (proteins and peptides) with apropriate classes
+from microtpct.core.databases import TargetDB, QueryDB
+from microtpct.core.results import Match, MatchResult
 
-# Matching with Aho-Corasick
-def run_ahocorasick(peptides, proteome_file):
-    # Build automaton
+
+def run_ahocorasick(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
+    """
+    Aho-Corasick exact matching using ambiguous I/L sequences.
+
+    Parameters
+    - target_db: TargetDB with `ids` and `ambiguous_il_sequences`
+    - query_db: QueryDB with `ids` and `ambiguous_il_sequences`
+
+    Returns
+    - MatchResult: list of Match(query_id, target_id, position)
+    """
+
+    # Build automaton from query sequences (ambiguous I/L variants)
+    automaton = _build_automaton(query_db.ids, query_db.ambiguous_il_sequences)
+
+    matches: List[Match] = []
+
+    # Scan each target sequence and record matches
+    for t_id, t_seq in zip(target_db.ids, target_db.ambiguous_il_sequences):
+        for end_idx, (q_id, q_seq) in automaton.iter(t_seq):
+            start = end_idx - len(q_seq) + 1
+            matches.append(Match(query_id=q_id, target_id=t_id, position=start))
+
+    return MatchResult(matches)
+
+
+def _build_automaton(query_ids: List[str], sequences: List[str]) -> ahocorasick.Automaton:
     A = ahocorasick.Automaton()
-    for i, pep in enumerate(peptides):
-        A.add_word(pep, (i, pep))
+    for q_id, seq in zip(query_ids, sequences):
+        A.add_word(seq, (q_id, seq))
     A.make_automaton()
-    # Prepare results dict: peptide -> list of (protein_id, position)
-    results = {pep: [] for pep in peptides}
-
-    # Scan proteome and record matches
-    for record in SeqIO.parse(proteome_file, "fasta"):
-        seq = str(record.seq)
-        for end_idx, (i, pep) in A.iter(seq):
-            start = end_idx - len(pep) + 1
-            results.setdefault(pep, []).append((record.id, start))
-
-    return results
-
-
-
-### test:
-
-# Load peptides 
-# Load peptides: text file with one peptide sequence per line
-peptides = []
-peptides_file = "path/to/peptides.txt"
-
-with open(peptides_file) as f:
-    for line in f:
-        peptides.append(line.strip())
-print(len(peptides), "peptides loaded.")
-
-proteome_file = "path/to/uniprotkb_proteome_UP000000803_2025_11_25.fasta"
-
-print("\n=== Aho-Corasick ===")
-print(run_ahocorasick(peptides, proteome_file))
+    return A
 
