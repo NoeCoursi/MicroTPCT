@@ -1,16 +1,8 @@
-# pip install pyahocorasick
 import ahocorasick
-from Bio import SeqIO
 
-## to do : replace input (proteins and peptides) with apropriate classes
-
-# Matching with Aho-Corasick
 def run_ahocorasick(peptides, proteome_file):
-    # Build automaton
-    A = ahocorasick.Automaton()
-    for i, pep in enumerate(peptides):
-        A.add_word(pep, (i, pep))
-    A.make_automaton()
+    automaton = _build_automaton(peptides) # Build automaton
+    
     # Prepare results dict: peptide -> list of (protein_id, position)
     results = {pep: [] for pep in peptides}
 
@@ -22,6 +14,16 @@ def run_ahocorasick(peptides, proteome_file):
             results.setdefault(pep, []).append((record.id, start))
 
     return results
+
+
+def _build_automaton(sequence_dictionary: list) -> ahocorasick.Automaton:
+    automaton = ahocorasick.Automaton()
+    for index, sequence in enumerate(sequence_dictionary):
+        automaton.add_word(sequence, (index, sequence))
+    automaton.make_automaton()
+
+    return automaton
+
 
 
 
