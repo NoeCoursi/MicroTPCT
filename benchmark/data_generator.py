@@ -142,7 +142,7 @@ def extract_matching_peptides(
     """
 
     peptides: List[PeptideInput] = []
-    ground_truth: List[Tuple[int, int, int]] = []
+    ground_truth: List[Tuple[PeptideInput, int, int]] = []
 
     for i in range(n_peptides):
         prot_idx = rng.randrange(len(proteins))
@@ -153,19 +153,17 @@ def extract_matching_peptides(
         pep_len = min(pep_len, len(prot_seq))
 
         start = rng.randint(0, len(prot_seq) - pep_len)
-        pep = prot_seq[start:start + pep_len]
+        pep_seq = prot_seq[start:start + pep_len]
 
-        pep = replace_X(pep, rng)
+        pep_seq = replace_X(pep_seq, rng)
 
-        peptides.append(
-            PeptideInput(
-                accession=f"PEP_MATCH_{i+1:06d}",
-                sequence=pep,
-            )
+        peptide = PeptideInput(
+            accession=f"PEP_MATCH_{i+1:06d}",
+            sequence=pep_seq,
         )
 
-        # ground truth (indices for now)
-        ground_truth.append((i, prot_idx, start))
+        peptides.append(peptide)
+        ground_truth.append((peptide, prot_idx, start))
 
     return peptides, ground_truth
 
@@ -421,21 +419,18 @@ def generate_benchmark_databases(
     target_db = build_database(proteins, SequenceRole.PROTEIN)
     query_db = build_database(all_peptides, SequenceRole.PEPTIDE)
 
-
-    # Build ground truth matching result
+    # Build ground truth using actual query IDs
     matches: List[Match] = []
-
-    for pep_idx, prot_idx, pos in raw_ground_truth:
-        query_id = query_db.ids[pep_idx]
+    for peptide_obj, prot_idx, pos in raw_ground_truth:
+        query_idx = query_db.sequences.index(peptide_obj.sequence)
+        query_id = query_db.ids[query_idx]
         target_id = target_db.ids[prot_idx]
 
-        matches.append(
-            Match(
-                query_id=query_id,
-                target_id=target_id,
-                position=pos,
-            )
-        )
+        matches.append(Match(
+            query_id=query_id,
+            target_id=target_id,
+            position=pos,
+        ))
 
     ground_truth = MatchResult(matches)
 
@@ -450,11 +445,11 @@ if __name__ == "__main__":
         protein_std_length = 3,
         x_rate = 1/100,
 
-        n_peptides = 5,
+        n_peptides = 8,
         peptide_mean_length = 5,
         peptide_std_length = 1,
         match_fraction = 0.5,
-        quasi_fraction = 0.5,
+        quasi_fraction = 0.2,
 
         redundancy_rate = 0.5,
         mutation_rate = 0.2,
