@@ -4,3 +4,7 @@ version = "0.0.1-dev"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[project.scripts]
+microtpct = "microtpct.interfaces.cli:main"
+microtpct-gui = "microtpct.interfaces.gui:main"

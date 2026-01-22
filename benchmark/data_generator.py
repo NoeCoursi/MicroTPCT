@@ -55,6 +55,7 @@ def generate_proteome(
 
         proteins.append(
             ProteinInput(
+                id=f"P{i+1:06d}",
                 accession=f"P{i+1:06d}",
                 sequence=seq,
             )
@@ -90,6 +91,7 @@ def extract_matching_peptides(
 
         peptides.append(
             PeptideInput(
+                id=f"PEP_MATCH_{i+1:06d}",
                 accession=f"PEP_MATCH_{i+1:06d}",
                 sequence=pep,
             )
@@ -121,6 +123,7 @@ def generate_non_matching_peptides(
             if not any(pep in prot for prot in proteome_sequences):
                 peptides.append(
                     PeptideInput(
+                        id=f"PEP_RANDOM_{i+1:06d}",
                         accession=f"PEP_RANDOM_{i+1:06d}",
                         sequence=pep,
                     )
