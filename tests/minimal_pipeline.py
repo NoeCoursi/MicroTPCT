@@ -28,29 +28,25 @@ def mini_pipeline(path, role: SequenceRole):
 
 
 
-import pandas as pd
-
 query_db = mini_pipeline(peptide_file_path, SequenceRole.PEPTIDE)
 
-df_query = pd.DataFrame({
-    "id": query_db.ids,
-    "sequence": query_db.sequences,
-    "ambiguous_il_sequence": query_db.ambiguous_il_sequences,
-    "accession": query_db.accessions
-})
 
-print(df_query)
+print(query_db.to_dataframe())
 
 
 target_db = mini_pipeline(proteome_file_path, SequenceRole.PROTEIN)
 
-df_target = pd.DataFrame({
-    "id": target_db.ids,
-    "sequence": target_db.sequences,
-    "ambiguous_il_sequence": target_db.ambiguous_il_sequences,
-    "accession": target_db.accessions
-})
-
-print(df_target)
+print(target_db.to_dataframe())
 
 
+from microtpct.core.match_find import run_find
+
+matching_results = run_find(target_db, query_db)
+
+print(matching_results.matches_for_query("Q001721"))
+
+print(matching_results.n_unique_targets_for_query("Q001721"))
+
+print([qid for qid in query_db.ids if matching_results.n_unique_targets_for_query(qid) > 1])
+
+print(matching_results.peptides_with_no_match(query_db.ids))
