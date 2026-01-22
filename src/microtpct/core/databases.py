@@ -8,6 +8,7 @@ sequences by accession or other criteria.
 
 from dataclasses import dataclass
 from typing import List
+import pandas as pd
 
 
 @dataclass
@@ -48,6 +49,17 @@ class SequenceDB:
     def n_unique_accessions(self) -> int:
         "Return number of uniques accessions."
         return len(self.unique_accessions())
+    
+    def to_dataframe(self):
+        """
+        Return the database as a pandas DataFrame.
+        """
+        return pd.DataFrame({
+            "id": self.ids,
+            "accession": self.accessions,
+            "sequence": self.sequences,
+            "ambiguous_il_sequence": self.ambiguous_il_sequences,
+        })
 
 
 class TargetDB(SequenceDB):

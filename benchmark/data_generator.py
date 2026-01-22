@@ -216,3 +216,6 @@ if __name__ == "__main__":
 
         seed = 123,
     )
+
+    print(target_db.to_dataframe())
+    print(query_db.to_dataframe())
