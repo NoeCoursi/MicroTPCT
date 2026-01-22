@@ -11,7 +11,6 @@ from microtpct.core.results import Match, MatchResult
 # sudo apt update
 # sudo apt install ncbi-blast+
 
-## to do : replace J I and L with ONLY L in the sequences before writing to fasta
 
 def peptides_to_fasta(peptides: List[str], ids: List[str], out_path: str):
     """Write peptide sequences to FASTA using provided IDs as headers.
@@ -68,7 +67,7 @@ def make_blast_db(proteome_file, db_prefix):
         except Exception as e:
             snippet = f"<could not read proteome file: {e}>"
 
-        # print aussi le chemin du fichier pour debug
+        # print file path to debug
         raise RuntimeError(
             f"makeblastdb failed (rc={proc.returncode}): {proc.stderr.strip()}\n"
             f"Proteome file path: {proteome_file}\n"
@@ -126,11 +125,9 @@ def run_blast(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
     try:
         targets_fa = os.path.join(tmpdir, "proteome.fasta")
         proteins_to_fasta(target_db.ambiguous_il_sequences, target_db.ids, targets_fa)
-        #proteins_to_fasta(target_db.sequences, target_db.ids, targets_fa)
 
         queries_fa = os.path.join(tmpdir, "peptides.fasta")
         peptides_to_fasta(query_db.ambiguous_il_sequences, query_db.ids, queries_fa)
-        #peptides_to_fasta(query_db.sequences, query_db.ids, queries_fa)
 
         # Debug: print quick stats and first lines of the generated FASTA files
         for path in (targets_fa, queries_fa):
@@ -168,9 +165,5 @@ def run_blast(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
         matches = parse_blast_output(blast_out)
         return MatchResult(matches)
     finally:
-        # Optionally keep the temporary directory for inspection when debugging.
-        if os.environ.get("KEEP_BLAST_TMP") == "1":
-            print(f"DEBUG: keeping temporary directory for inspection: {tmpdir}")
-        else:
-            sh.rmtree(tmpdir)
+        sh.rmtree(tmpdir)
 
