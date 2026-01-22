@@ -60,6 +60,18 @@ class MatchResult:
         """Total number of matches."""
         return len(self._matches)
 
+    # Help to extract results at the end 
+    
+    def to_dataframe(self):
+        """
+        Return the database as a pandas DataFrame.
+        """
+        return pd.DataFrame({
+            "id": self.ids,
+            "accession": self.accessions,
+            "sequence": self.sequences,
+            "ambiguous_il_sequence": self.ambiguous_il_sequences,
+        })
 
     # Indexing helpers
     def by_query(self) -> Dict[str, List[Match]]:
