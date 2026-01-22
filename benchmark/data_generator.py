@@ -64,38 +64,68 @@ def generate_proteome(
     return proteins
 
 
-def duplicate_proteins_with_mutations(
+def introduce_redundancy(
     proteins: List[ProteinInput],
     redundancy_rate: float,
     mutation_rate: float,
     rng: random.Random,
 ) -> List[ProteinInput]:
     """
-    Duplicate a fraction of proteins and introduce point mutations.
+    Replace a fraction of proteins by mutated duplicates of other proteins,
+    without changing the total number of proteins.
+
+    Duplicated proteins are renamed as:
+        <PARENT_ACCESSION>_DUP_<k>
+    where k is the duplication index for this parent protein.
     """
 
+    if redundancy_rate == 0.0:
+        return proteins
+
+    n = len(proteins)
+    k = int(n * redundancy_rate)
+
+    # Indices of proteins that will be replaced by duplicates
+    duplicate_indices = rng.sample(range(n), k)
+
     new_proteins = list(proteins)
-    n_dup = int(len(proteins) * redundancy_rate)
 
-    for i in range(n_dup):
-        original = rng.choice(proteins)
-        seq = list(original.sequence)
+    # Counter of how many times each parent protein has been duplicated
+    dup_counter: dict[str, int] = {}
 
-        # introduce mutations
+    for idx in duplicate_indices:
+        # Choose a different protein as template (parent)
+        parent_idx = rng.randrange(n)
+        while parent_idx == idx:
+            parent_idx = rng.randrange(n)
+
+        parent = proteins[parent_idx]
+        parent_acc = parent.accession
+
+        # Update duplication counter for this parent
+        dup_counter[parent_acc] = dup_counter.get(parent_acc, 0) + 1
+        dup_version = dup_counter[parent_acc]
+
+        # Mutate parent sequence
+        seq = list(parent.sequence)
+
         for j in range(len(seq)):
             if seq[j] != "X" and rng.random() < mutation_rate:
                 seq[j] = rng.choice(AA_ALPHABET)
 
         new_seq = "".join(seq)
 
-        new_proteins.append(
-            ProteinInput(
-                accession=f"{original.accession}_DUP{i+1}",
-                sequence=new_seq,
-            )
+        # New accession: PARENT_DUP_k
+        new_acc = f"{parent_acc}_DUP_{dup_version}"
+
+        new_proteins[idx] = ProteinInput(
+            accession=new_acc,
+            sequence=new_seq,
         )
 
     return new_proteins
+
+
 
 # Peptide generation (match)
 
@@ -215,6 +245,78 @@ def generate_non_matching_peptides(
     return peptides
 
 
+def validate_parameters(
+    *,
+    # Counts
+    n_proteins: int,
+    n_peptides: int,
+
+    # Length distributions
+    protein_mean_length: float,
+    protein_std_length: float,
+    peptide_mean_length: float,
+    peptide_std_length: float,
+
+    # Rates / proportions
+    x_rate: float,
+    match_fraction: float,
+    quasi_fraction: float,
+    redundancy_rate: float,
+    mutation_rate: float,
+):
+    """
+    Validate all benchmark generation parameters.
+
+    Ensures numerical validity and consistency of proportions.
+    Raises ValueError with explicit messages if invalid.
+    """
+
+    # Basic positivity checks
+
+    if n_proteins <= 0:
+        raise ValueError("n_proteins must be > 0")
+
+    if n_peptides <= 0:
+        raise ValueError("n_peptides must be > 0")
+
+    if protein_mean_length <= 0 or peptide_mean_length <= 0:
+        raise ValueError("Mean sequence lengths must be > 0")
+
+    if protein_std_length < 0 or peptide_std_length < 0:
+        raise ValueError("Standard deviations must be >= 0")
+
+    # Probability bounds
+
+    probs = {
+        "x_rate": x_rate,
+        "match_fraction": match_fraction,
+        "quasi_fraction": quasi_fraction,
+        "redundancy_rate": redundancy_rate,
+        "mutation_rate": mutation_rate,
+    }
+
+    for name, value in probs.items():
+        if not (0.0 <= value <= 1.0):
+            raise ValueError(
+                f"{name} must be between 0 and 1 (got {value})"
+            )
+
+    # Consistency between proportions
+
+    if match_fraction + quasi_fraction > 1.0:
+        raise ValueError(
+            "match_fraction + quasi_fraction must be <= 1.0 "
+            f"(got {match_fraction + quasi_fraction})"
+        )
+
+    # Redundancy only makes sense if mutation_rate > 0 (optional strictness)
+    if redundancy_rate > 0 and mutation_rate == 0:
+        raise ValueError(
+            "mutation_rate must be > 0 when redundancy_rate > 0 "
+            "(otherwise duplicated proteins are identical)"
+        )
+
+
 
 # Main public API
 
@@ -245,6 +347,21 @@ def generate_benchmark_databases(
     Generate synthetic TargetDB and QueryDB for MicroTPCT benchmarking.
     """
 
+    # Validate all parameters first
+    validate_parameters(
+        n_proteins=n_proteins,
+        n_peptides=n_peptides,
+        protein_mean_length=protein_mean_length,
+        protein_std_length=protein_std_length,
+        peptide_mean_length=peptide_mean_length,
+        peptide_std_length=peptide_std_length,
+        x_rate=x_rate,
+        match_fraction=match_fraction,
+        quasi_fraction=quasi_fraction,
+        redundancy_rate=redundancy_rate,
+        mutation_rate=mutation_rate,
+    )
+
     rng = random.Random(seed)
 
     # Generate proteome
@@ -256,7 +373,7 @@ def generate_benchmark_databases(
         seed=seed,
     )
 
-    proteins = duplicate_proteins_with_mutations(
+    proteins = introduce_redundancy(
         proteins=proteins,
         redundancy_rate=redundancy_rate,
         mutation_rate=mutation_rate,
@@ -337,6 +454,10 @@ if __name__ == "__main__":
         peptide_mean_length = 5,
         peptide_std_length = 1,
         match_fraction = 0.5,
+        quasi_fraction = 0.5,
+
+        redundancy_rate = 0.5,
+        mutation_rate = 0.2,
 
         seed = 123,
     )

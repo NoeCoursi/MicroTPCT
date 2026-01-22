@@ -43,6 +43,8 @@ from microtpct.core.match_find import run_find
 
 matching_results = run_find(target_db, query_db)
 
+print(matching_results)
+
 print(matching_results.matches_for_query("Q001721"))
 
 print(matching_results.n_unique_targets_for_query("Q001721"))
