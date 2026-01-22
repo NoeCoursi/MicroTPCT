@@ -1,5 +1,7 @@
 import random
-from typing import List, Optional, Tuple
+from datetime import datetime
+from typing import List, Optional, Tuple, Dict, Any
+import json
 
 from microtpct.io.schema import ProteinInput, PeptideInput
 from microtpct.io.converters import build_database
@@ -315,6 +317,44 @@ def validate_parameters(
         )
 
 
+# Display config utilities
+
+def summarize_config(
+    *,
+    n_proteins: int,
+    protein_mean_length: float,
+    protein_std_length: float,
+    x_rate: float,
+    n_peptides: int,
+    peptide_mean_length: float,
+    peptide_std_length: float,
+    redundancy_rate: float,
+    mutation_rate: float,
+    match_fraction: float,
+    quasi_fraction: float,
+    seed: Optional[int],
+) -> Dict[str, Any]:
+    """
+    Return a reproducibility dictionary describing the benchmark configuration.
+    """
+
+    return {
+        "timestamp": datetime.now().isoformat(),
+        "n_proteins": n_proteins,
+        "protein_mean_length": protein_mean_length,
+        "protein_std_length": protein_std_length,
+        "x_rate": x_rate,
+        "n_peptides": n_peptides,
+        "peptide_mean_length": peptide_mean_length,
+        "peptide_std_length": peptide_std_length,
+        "match_fraction": match_fraction,
+        "quasi_fraction": quasi_fraction,
+        "nomatch_fraction": 1.0 - match_fraction - quasi_fraction,
+        "redundancy_rate": redundancy_rate,
+        "mutation_rate": mutation_rate,
+        "seed": seed,
+    }
+
 
 # Main public API
 
@@ -340,6 +380,9 @@ def generate_benchmark_databases(
 
     # Random control
     seed: Optional[int] = None,
+
+    # Config save
+    save_config_path: Optional[str] = None
 ):
     """
     Generate synthetic TargetDB and QueryDB for MicroTPCT benchmarking.
@@ -358,6 +401,22 @@ def generate_benchmark_databases(
         quasi_fraction=quasi_fraction,
         redundancy_rate=redundancy_rate,
         mutation_rate=mutation_rate,
+    )
+
+    # Build reproducibility config
+    config = summarize_config(
+        n_proteins=n_proteins,
+        protein_mean_length=protein_mean_length,
+        protein_std_length=protein_std_length,
+        x_rate=x_rate,
+        n_peptides=n_peptides,
+        peptide_mean_length=peptide_mean_length,
+        peptide_std_length=peptide_std_length,
+        redundancy_rate=redundancy_rate,
+        mutation_rate=mutation_rate,
+        match_fraction=match_fraction,
+        quasi_fraction=quasi_fraction,
+        seed=seed,
     )
 
     rng = random.Random(seed)
@@ -434,12 +493,16 @@ def generate_benchmark_databases(
 
     ground_truth = MatchResult(matches)
 
-    return target_db, query_db, ground_truth
+    if save_config_path:
+        with open(save_config_path, "w") as f:
+            json.dump(config, f, indent=2)
+
+    return target_db, query_db, ground_truth, config
 
 
 if __name__ == "__main__":
 
-    target_db, query_db, ground_truth = generate_benchmark_databases(
+    target_db, query_db, ground_truth, _ = generate_benchmark_databases(
         n_proteins = 20,
         protein_mean_length = 20,
         protein_std_length = 3,
@@ -455,6 +518,7 @@ if __name__ == "__main__":
         mutation_rate = 0.2,
 
         seed = 123,
+        save_config_path="test.json"
     )
 
     print("=== TARGET DATABASE ===")
