@@ -6,7 +6,7 @@ peptide-to-protein matching results produced by the matching engines.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Iterable, Set, Tuple
+from typing import Dict, List, Iterable, Set
 
 
 # Match object
