@@ -42,7 +42,8 @@ print(target_db.to_dataframe())
 # from microtpct.core.match_find import run_find
 # from microtpct.core.match_ahocorasick import run_ahocorasick
 # from microtpct.core.match_ahocorasick_rs import run_ahocorasick_rs
-from microtpct.core.match_blast_basic import run_blast
+# from microtpct.core.match_blast_basic import run_blast
+from microtpct.core.match_blast import run_blast
 
 
 
@@ -50,7 +51,6 @@ from microtpct.core.match_blast_basic import run_blast
 # matching_results = run_ahocorasick(target_db, query_db)
 # matching_results = run_ahocorasick_rs(target_db, query_db)
 matching_results = run_blast(target_db, query_db)
-
 
 
 print(matching_results)
