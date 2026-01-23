@@ -7,12 +7,17 @@ import pandas as pd
 from multiprocessing import Pool, cpu_count
 from Bio import SeqIO  # type: ignore
 
+from microtpct.core.databases import TargetDB, QueryDB
+from microtpct.core.results import Match, MatchResult
+
 BIG_TEXT = None
 POS_TO_TARGET = None
 SEPARATOR = "#" # Separator inserted between concatenated sequences
 
 
-def build_big_text(target_fasta: str) -> tuple:
+
+
+def build_big_text(target_db: TargetDB) -> tuple:
     """
     Concatenate all target sequences into a single text string.
     Build a mapping from global position to (target_id, offset).
@@ -29,11 +34,11 @@ def build_big_text(target_fasta: str) -> tuple:
     pos_map = []
     current_pos = 0
 
-    for rec in SeqIO.parse(target_fasta, "fasta"):
-        seq = str(rec.seq)
+    for prot_id, prot_seq in zip(target_db.ids, target_db.ambiguous_il_sequences):
+        seq = str(prot_seq)
         big_chunks.append(seq)
 
-        pos_map.append((current_pos, current_pos + len(seq), rec.id))
+        pos_map.append((current_pos, current_pos + len(seq), prot_id))
 
         # Update the global position
         current_pos += len(seq)
@@ -70,6 +75,9 @@ def locate_target(global_pos) -> tuple:
         if start <= global_pos < end:
             return tid, global_pos - start
     return None, None
+
+
+
 
 def process_query(query: list) -> tuple:
     """
@@ -114,27 +122,28 @@ def dict2panda(data: dict) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
+def run_boyer_moore(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
 
-# Main equivalent
-assert len(sys.argv) == 3, "Warning, a probleme with inpu has been detected, check the file path "
-query_fasta, target_fasta =sys.argv[1], sys.argv[2]
+    # Build concatenated text and position mapping
+    big_text, pos_map = build_big_text(target_db)
 
-# Build concatenated text and position mapping
-big_text, pos_map = build_big_text(target_fasta)
+    
 
+    queries = [(t_id, str(t_seq)) for t_id, t_seq in zip(target_db.ids, target_db.ambiguous_il_sequences)]
 
-queries = [(rec.id, str(rec.seq)) for rec in SeqIO.parse(query_fasta, "fasta")]
+    # DONE
 
+    # Perform parallel search using multiprocessing
+    with Pool(
+        processes=cpu_count(),
+        initializer=init_worker,
+        initargs=(big_text, pos_map),
+    ) as pool:
+        all_results = pool.map(process_query, queries)
 
-# Perform parallel search using multiprocessing
-with Pool(
-    processes=cpu_count(),
-    initializer=init_worker,
-    initargs=(big_text, pos_map),
-) as pool:
-    all_results = pool.map(process_query, queries)
-
-
-    results_dataframe = dict2panda(dict(all_results))
-    print(results_dataframe)
+        print(all_results)
+        #results_dataframe = dict2panda(dict(all_results))
+        #print(results_dataframe)
+    
+    return
 
