@@ -3,8 +3,8 @@ from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.converters import *
 from pathlib import Path
 
-peptide_file_path = Path("path/to/peptides.xlsx")
-proteome_file_path = Path("path/to/proteome.fasta")
+peptide_file_path = Path("/home/bbergero/INSA_repo/UF7/MicroTPCT/raw_data/Drosophila_Microproteome_Openprot_2025-10-09_all_conditions_2025-11-24_1613.xlsx")
+proteome_file_path = Path("/home/bbergero/INSA_repo/UF7/MicroTPCT/raw_data/uniprotkb_proteome_UP000000803_2025_11_25.fasta")
 
 
 def mini_pipeline(path, role: SequenceRole):
@@ -26,34 +26,35 @@ def mini_pipeline(path, role: SequenceRole):
     return db
 
 
-
-
 query_db = mini_pipeline(peptide_file_path, SequenceRole.PEPTIDE)
-
-
-print(query_db.to_dataframe())
-
+print(f"Query DB : {query_db.to_dataframe()}")
 
 target_db = mini_pipeline(proteome_file_path, SequenceRole.PROTEIN)
 
-print(target_db.to_dataframe())
+print(f"Target DB : {target_db.to_dataframe()}")
+
+
+
 
 
 # from microtpct.core.match_algorithms.match_find import run_find
 # from microtpct.core.match_algorithms.match_ahocorasick import run_ahocorasick
 # from microtpct.core.match_algorithms.match_ahocorasick_rs import run_ahocorasick_rs
 # from microtpct.core.match_algorithms.match_blast_basic import run_blast
-from microtpct.core.match_algorithms.match_blast import run_blast
+#from microtpct.core.match_algorithms.match_blast import run_blast
+from microtpct.core.match_algorithms.regex_searcher import run_regex_search
+#from microtpct.core.match_algorithms.boyer_moore import run_boyer_moore
 
 
 
 # matching_results = run_ahocorasick(target_db, query_db)
 # matching_results = run_ahocorasick(target_db, query_db)
 # matching_results = run_ahocorasick_rs(target_db, query_db)
-matching_results = run_blast(target_db, query_db)
+#matching_results = run_blast(target_db, query_db)
+matching_results = run_regex_search(target_db, query_db)
+#matching_results = run_boyer_moore(target_db, query_db)
 
-
-print(matching_results)
+exit(1)
 
 print(matching_results)
 
