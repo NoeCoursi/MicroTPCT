@@ -3,8 +3,9 @@ from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.converters import *
 from pathlib import Path
 
-peptide_file_path = Path(r"C:\Users\huawei\Desktop\Liste_peptides.xlsx")
-proteome_file_path = Path(r"C:\Users\huawei\Downloads\uniprotkb_proteome_UP000000803_2025_11_25.fasta")
+peptide_file_path = Path(r"/mnt/c/Users/Hp/Desktop/biocomp_repository/MicroTPCT/peptides_noe.xlsx") #Path(r"C:\Users\huawei\Desktop\Liste_peptides.xlsx")
+proteome_file_path = Path(r"/mnt/c/Users/Hp/Desktop/biocomp_repository/MicroTPCT/uniprotkb_proteome_UP000000803_2025_11_25.fasta") #Path(r"C:\Users\huawei\Downloads\uniprotkb_proteome_UP000000803_2025_11_25.fasta")
+
 
 
 def mini_pipeline(path, role: SequenceRole):
