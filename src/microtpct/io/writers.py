@@ -22,6 +22,28 @@ from datetime import datetime
 
 def write_outputs_to_csv(algorithm_output, algorithm_output_X , algorithm_input, file_path=None, output_file="microTPCT.csv", output_metrics="metrics.csv"):
 
+                                                # Compute Metrics 
+    # Need to compute metrics first before converting algorithm output to dataframe instead of object from class MatchResult
+
+    # Indexing helpers defined in class MatchResult used here: 
+    # by_query(self) Group matches by query (peptide) ID
+    # by_target(self) Group matches by target (protein) ID
+    
+    # Analysis helpers defined in class MatchResult used here:
+    # matches_for_query
+    # n_matches_for_query
+    # peptides_with_no_match
+    # n_unique_queries
+    # n_unique_targets
+    
+    # Compute metrics with the above helpers
+    total_peptides = algorithm_input.size
+    matched_peptides = algorithm_output.n_unique_queries()
+    unmatched_peptides = len(algorithm_output.peptides_with_no_match(algorithm_input.ids))
+    unique_proteins_matched = algorithm_output.n_unique_targets()
+    avg_proteins_per_peptide = ((total_peptides - unmatched_peptides) / matched_peptides) if matched_peptides > 0 else 0
+
+
                                         # Create micropeptides CSV file            
 
     # algorithm_output contains query_id = peptide_ID, target_id = protein_ID, position = start_position     
@@ -33,18 +55,18 @@ def write_outputs_to_csv(algorithm_output, algorithm_output_X , algorithm_input,
     algorithm_output_X.columns = ['query_id', 'target_id_X', 'position']
 
     # It's still missing peptide_seq and J_peptide_seq, so we fetch those in input files QueryDB
-    # QueryDB contains : ids = peptide_ID, sequences= peptide_seq, ambiguous_il_sequences = J_peptide_seq 
-    algorithm_input= algorithm_input.to_dataframe()[['ids', 'sequences', 'ambiguous_il_sequences']]
+    # QueryDB contains : id = peptide_ID, sequence= peptide_seq, ambiguous_il_sequence = J_peptide_seq 
+    algorithm_input= algorithm_input.to_dataframe()[['id', 'sequence', 'ambiguous_il_sequence']]
 
     # Merge all dataframes on peptide_ID
     algorithms = pd.merge(algorithm_output,algorithm_output_X,
                       on=['query_id','position'], how="outer",
                       suffixes=('', '_X'))
     # merge with input 
-    output_data = pd.merge(algorithms,algorithm_input, 
-                       left_on='query_id', right_on='ids', 
+    output_data = pd.merge(algorithm_input,algorithms, 
+                       left_on='id', right_on='query_id', 
                        how="outer")
-    output_data= output_data[['query_id', 'target_id', 'target_id_X', 'position', 'sequences', 'ambiguous_il_sequences']]
+    output_data= output_data[['id', 'target_id', 'target_id_X', 'position', 'sequence', 'ambiguous_il_sequence']]
     output_data.columns = ['peptide_ID', 'protein_ID', 'protein_ID_X', 'start_position', 'peptide_seq', 'J_peptide_seq']
 
 
@@ -72,31 +94,11 @@ def write_outputs_to_csv(algorithm_output, algorithm_output_X , algorithm_input,
     output_path = output_dir/file_name 
 
     # write the micropeptides to a CSV file "microTPCT.csv"
-    (output_data[['peptide_ID', 'protein_ID',
-                       'peptide_seq','J_peptide_seq',
-                       'start_position']]).to_csv(output_path, index=False)
+    (output_data).to_csv(output_path, index=False)
     
 
-    
-                        # Compute Metrics 
 
-    # Indexing helpers defined in class MatchResult used here: 
-    # by_query(self) Group matches by query (peptide) ID
-    # by_target(self) Group matches by target (protein) ID
-    
-    # Analysis helpers defined in class MatchResult used here:
-    # matches_for_query
-    # n_matches_for_query
-    # peptides_with_no_match
-    # n_unique_queries
-    # n_unique_targets
-    
-    # Compute metrics with the above helpers
-    total_peptides = len(algorithm_input)
-    matched_peptides = algorithm_output.n_unique_queries()
-    unmatched_peptides = len(algorithm_output.peptides_with_no_match(algorithm_input['ids']))
-    unique_proteins_matched = algorithm_output.n_unique_targets()
-    avg_proteins_per_peptide = ((total_peptides - unmatched_peptides) / matched_peptides) if matched_peptides > 0 else 0
+
 
     # Create a DataFrame to hold the metrics
     metrics_df = pd.DataFrame({

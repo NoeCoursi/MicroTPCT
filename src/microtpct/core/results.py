@@ -6,8 +6,8 @@ peptide-to-protein matching results produced by the matching engines.
 """
 
 from dataclasses import dataclass
+import pandas as pd
 from typing import Dict, List, Iterable, Set
-
 
 # Match object
 @dataclass(frozen=True)
@@ -60,18 +60,20 @@ class MatchResult:
         """Total number of matches."""
         return len(self._matches)
 
+
+
     # Help to extract results at the end 
-    
-    def to_dataframe(self):
+
+    def to_dataframe(self) -> pd.DataFrame:
         """
-        Return the database as a pandas DataFrame.
+        Return the matching results as a pandas DataFrame.
+        One row per peptide-to-protein match.
         """
-        return pd.DataFrame({
-            "id": self.ids,
-            "accession": self.accessions,
-            "sequence": self.sequences,
-            "ambiguous_il_sequence": self.ambiguous_il_sequences,
-        })
+        return pd.DataFrame(
+            {"query_id": [m.query_id for m in self._matches],
+                "target_id": [m.target_id for m in self._matches],
+                "position": [m.position for m in self._matches]} )
+
 
     # Indexing helpers
     def by_query(self) -> Dict[str, List[Match]]:
