@@ -14,7 +14,12 @@ from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.validators import validate_protein_input, validate_peptide_input, validates_wildcards
 from microtpct.io.converters import build_database
 from microtpct.core.databases import TargetDB
-# from microtpct.core.match import match_ahocorasick
+
+
+from microtpct.core.match.match_find import run_find
+from microtpct.core.match.wildcards_matcher import run_wildcard_match
+
+
 # from microtpct.core.match_engines import MATCHING_ENGINES, list_available_engines
 from microtpct.core.results import MatchResult
 from microtpct.utils.logging import setup_logger
@@ -141,21 +146,27 @@ def run_pipeline(
         f"({query_db.n_unique_accessions()} unique accessions)"
     )
 
-    return target_db, query_db
 
-    # # ----------------------------
-    # # Step 4 — Run matching engine
-    # # ----------------------------
+    # Run matching engine
 
-    # logger.info(f"Running matching engine: {matching_engine}")
+    logger.info(f"Running matching engine: {matching_engine} {"+ wildcards match" if effective_allow_wildcard else ""}")
 
-    # if matching_engine == "find":
-    #     result = run_find(target_db, query_db)
+    # Strict matching (ignore wildcard)
+    if matching_engine == "find": ### TODO : Make it modular using MATCHING_ENGINES ??????
+        result_strict_matching = run_find(target_db, query_db)
+        total_n_matches = result_strict_matching.__len__()
+    else:
+        raise ValueError(f"Unsupported matching engine: '{matching_engine}'")
+    
+    # Wildcard matching
+    if effective_allow_wildcard:
+        result_wildcard_matching = run_wildcard_match(target_db.get_wildcard_targets(), # Only sequence that contain wildcards
+                                                       query_db)
 
-    # else:
-    #     raise ValueError(f"Unsupported matching engine: '{matching_engine}'")
+        total_n_matches += result_wildcard_matching.__len__()
 
-    # logger.info(f"Matching completed: {len(result)} total matches")
+    
+    logger.info(f"Matching completed: {total_n_matches} total matches")
 
     # # ----------------------------
     # # Done
@@ -190,12 +201,11 @@ def _inject_wildcard_metadata(target_db, target_inputs):
 
 
 
-target, query = run_pipeline(
+run_pipeline(
     target_file = r"C:\Users\huawei\Desktop\uniprotkb_proteome_UP000000803_2025_11_25.fasta",
     query_file = r"c:\Users\huawei\Desktop\Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613.xlsx",
     allow_wildcard = True,
+    matching_engine = "find",
 
     wildcards = "X"
 )
-
-print(target.to_dataframe())

@@ -35,7 +35,7 @@ def kmer_set(sequence: str, k: int) -> set:
 def kmer_sets_filter(k_mer_set):
     return {k for k in k_mer_set if "." in k}
 
-def run_fuzzy_match(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
+def run_wildcard_match(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
     # dictionnary of peptide through their sequence length
     query_length_dict = get_peptide_dict(query_db.ids, query_db.ambiguous_il_sequences)
     matches: list[Match] = []
@@ -59,8 +59,3 @@ def run_fuzzy_match(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
                             position=(match.start(),match.end())))
 
     return MatchResult(matches)
-
-
-
-print("\n=== Regex search() ===")
-print(run_fuzzy_match(TargetDB, QueryDB))
