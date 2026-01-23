@@ -198,4 +198,4 @@ target, query = run_pipeline(
     wildcards = "X"
 )
 
-print(target.get_wildcard_targets().to_dataframe())
+print(target.to_dataframe())
