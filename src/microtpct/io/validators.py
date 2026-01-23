@@ -8,6 +8,8 @@ It enforces data completeness, formatting rules and basic
 biological constraints.
 """
 
+from typing import Optional, List
+
 from microtpct.io.schema import SequenceInput, ProteinInput, PeptideInput
 from microtpct.utils import setup_logger
 
@@ -32,7 +34,7 @@ def validate_sequence_input(seq: SequenceInput) -> None:
 
 # Protein validation
 
-def validate_protein_input(prot: ProteinInput) -> None:
+def validate_protein_input(prot: ProteinInput, wildcards: Optional[str | List[str]] = None) -> None:
     if type(prot) is not ProteinInput:
         raise TypeError(
             f"validate_protein_input() expects ProteinInput, got {type(prot).__name__}"
@@ -69,8 +71,8 @@ def validate_peptide_input(pep: PeptideInput) -> None:
 
 
 # Internal helpers
-def _validate_amino_acid_sequence(sequence: str, obj_id: str | None = None) -> None:
-    invalid = set(sequence.upper()) - AMINO_ACIDS
+def _validate_amino_acid_sequence(sequence: str, obj_id: str | None = None, wildcards: Optional[set] = None) -> None:
+    invalid = set(sequence.upper()) - AMINO_ACIDS.add(wildcards)
     if invalid:
         id_info = f" for object '{obj_id}'" if obj_id else ""
         logger.error(
@@ -79,3 +81,16 @@ def _validate_amino_acid_sequence(sequence: str, obj_id: str | None = None) -> N
         raise ValueError(
             f"Invalid amino acids found{id_info}: {', '.join(sorted(invalid))}"
         )
+
+
+def validates_wildcards(wildcards: Optional[set] = None):
+    overlapping = wildcards & AMINO_ACIDS
+
+    if overlapping:
+        logger.error(
+            f"Invalid wildcard(s) found: {sorted(overlapping)} overlap with standard amino acids."
+        )
+        raise ValueError(
+            f"Invalid wildcard(s) found: {sorted(overlapping)} overlap with standard amino acids."
+        )
+    
