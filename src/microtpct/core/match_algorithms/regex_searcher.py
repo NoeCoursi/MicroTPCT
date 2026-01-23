@@ -1,5 +1,3 @@
-#/usr/bin/env python3
-
 import sys, re
 import pandas as pd
 from collections import defaultdict
@@ -41,8 +39,6 @@ def run_regex_search(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
     # dictionnary of peptide through their sequence length
     query_length_dict = get_peptide_dict(query_db.ids, query_db.ambiguous_il_sequences)
     matches: list[Match] = []
-
-    print(query_length_dict)
 
     for t_id, t_seq in zip(target_db.ids, target_db.ambiguous_il_sequences):
 
