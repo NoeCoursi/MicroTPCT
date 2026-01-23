@@ -7,6 +7,10 @@
      #                └── core.alignment / metrics / sequences
       #                    └── io.writers
 
+
+#  run GUI application for MicroTPCT
+#  python3 src/microtpct/interfaces/gui.py
+
 ### for Linux/WSL users who do not have tkinter installed:
 # sudo apt update
 # sudo apt install python3-tk
@@ -21,7 +25,7 @@ sys.path.append(str(repo_root))
 
 #tests
 from tests import minimal_pipeline #.../MicroTPCT/tests/minimal_pipeline.py
-
+from tests.minimal_pipeline import minimal_pipeline_gui
 #config
 # pip install pyyaml
 import yaml
@@ -30,6 +34,7 @@ from pathlib import Path
 config_path = Path(__file__).parent.parent / "config" / "defaults.yaml"
 with open(config_path, 'r') as f:
     config = yaml.safe_load(f)
+
 #/mnt/c/Users/Hp/Desktop/biocomp_repository/MicroTPCT/src/microtpct/config/defaults.yaml
 #from microtpct.config import defaults
 #from microtpct.config.defaults import load
@@ -101,13 +106,13 @@ class MicroTPCTGUI:
     def run(self):
         try:
             # Appel du pipeline
-            minimal_pipeline(
+            minimal_pipeline_gui(
                 fasta_path=Path(self.fasta_path.get()),
                 peptide_path=Path(self.xlsx_path.get()),
                 output_path=Path(self.output_dir.get()),
                 algorithm=self.algorithm.get(),
                 wildcard=self.wildcard_choice.get() if self.wildcard_enabled.get() else None,
-                config=load(),
+                config=config,
             )
             messagebox.showinfo("Success", "Pipeline completed successfully")
         except Exception as e:
@@ -117,4 +122,7 @@ def main():
     root = tk.Tk()
     app = MicroTPCTGUI(root)
     root.mainloop()
+
+if __name__ == "__main__":
+    main()
 

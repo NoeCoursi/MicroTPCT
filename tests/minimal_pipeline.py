@@ -51,3 +51,34 @@ print(matching_results.n_unique_targets_for_query("Q001721"))
 print([qid for qid in query_db.ids if matching_results.n_unique_targets_for_query(qid) > 1])
 
 print(matching_results.peptides_with_no_match(query_db.ids))
+
+
+
+# FOR GUI TESTING PURPOSES ONLY
+# tests/minimal_pipeline.py
+from microtpct.io.readers import read_file, SequenceRole
+from microtpct.io.converters import build_database
+from microtpct.core.match_find import run_find
+from pathlib import Path
+
+def minimal_pipeline_gui(fasta_path, peptide_path, output_path=None, algorithm="match_find", wildcard=None, config=None):
+    """
+    Runs a minimal pipeline with FASTA and peptide inputs.
+    """
+    # Load sequences
+    query_sequences = list(read_file(peptide_path, role=SequenceRole.PEPTIDE))
+    target_sequences = list(read_file(fasta_path, role=SequenceRole.PROTEIN))
+
+    # Build databases
+    query_db = build_database(query_sequences, role=SequenceRole.PEPTIDE)
+    target_db = build_database(target_sequences, role=SequenceRole.PROTEIN)
+
+    # Run matching (simplified)
+    matching_results = run_find(target_db, query_db)
+
+    # Optionally save output
+    if output_path:
+        out_file = Path(output_path) / "matching_results.xlsx"
+        matching_results.to_excel(out_file)  # adjust this if your object supports .to_excel()
+
+    return matching_results
