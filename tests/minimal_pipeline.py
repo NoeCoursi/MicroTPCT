@@ -39,11 +39,11 @@ target_db = mini_pipeline(proteome_file_path, SequenceRole.PROTEIN)
 print(target_db.to_dataframe())
 
 
-# from microtpct.core.match_find import run_find
-# from microtpct.core.match_ahocorasick import run_ahocorasick
-# from microtpct.core.match_ahocorasick_rs import run_ahocorasick_rs
-# from microtpct.core.match_blast_basic import run_blast
-from microtpct.core.match_blast import run_blast
+# from microtpct.core.match_algorithms.match_find import run_find
+# from microtpct.core.match_algorithms.match_ahocorasick import run_ahocorasick
+# from microtpct.core.match_algorithms.match_ahocorasick_rs import run_ahocorasick_rs
+# from microtpct.core.match_algorithms.match_blast_basic import run_blast
+from microtpct.core.match_algorithms.match_blast import run_blast
 
 
 
