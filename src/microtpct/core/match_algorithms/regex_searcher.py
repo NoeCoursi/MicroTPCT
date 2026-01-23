@@ -1,18 +1,18 @@
-import sys, re
+import sys, re, logging
 import pandas as pd
 from collections import defaultdict
+from typing import Optional, Set
 
 from microtpct.core.databases import TargetDB, QueryDB
 from microtpct.core.results import Match, MatchResult
 
 
 # Creat a peptide dictionnary with peptide length as keys
-def get_peptide_dict(queries_id, queries_seq) -> dict:
+def get_peptide_dict(query_db) -> dict:
     query_length_dict = defaultdict(list)
-    for q_id, q_seq in zip(queries_id, queries_seq):
+    for q_id, q_seq in zip(query_db.ids, query_db.ambiguous_il_sequences):
         query_length_dict[len(q_seq)].append((q_id,q_seq))
     return query_length_dict
-
 
 def kmer_set(sequence: str, k: int) -> set:
     """
@@ -32,20 +32,39 @@ def kmer_set(sequence: str, k: int) -> set:
         for i in range(len(sequence) - k + 1)
     }
 
-def kmer_sets_filter(k_mer_set):
-    return {k for k in k_mer_set if "." in k}
+def kmer_sets_filter(k_mer_set: Set[str], wildcards: list) -> Set[str]:
+    """
+    Filters set to conserve only elem how contains char in param
+    """
+    return {k for k in k_mer_set if any(c in k for c in wildcards)}
 
-def run_regex_search(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
+def run_regex_search(target_db: TargetDB, query_db: QueryDB, wildcards: Optional[list] = None) -> MatchResult:
+    
+    print("======================")
+    print("====Regex search()====")
+    print("======================")
+
+    logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s")    
+
+    if wildcards is None:
+        wildcards = ["X"]
+    
+    logging.info(f"Running regex match with : {wildcards} as wildcards")
+
+
+
     # dictionnary of peptide through their sequence length
-    query_length_dict = get_peptide_dict(query_db.ids, query_db.ambiguous_il_sequences)
+    query_length_dict = get_peptide_dict(query_db)
     matches: list[Match] = []
-
+    
     for t_id, t_seq in zip(target_db.ids, target_db.ambiguous_il_sequences):
-
+        print(t_id)
         for key_len, pep_list in query_length_dict.items():
 
             full_kmer_set = kmer_set(t_seq, key_len) # creates a single k-mer set for every peptide length
-            filtered_kmer_set = kmer_sets_filter(full_kmer_set) # filter the kmer to keep only kmer with wildcards
+            filtered_kmer_set = kmer_sets_filter(full_kmer_set, wildcards) # filter the kmer to keep only kmer with wildcards
 
             for pep in pep_list:
                 pep_id, pep_seq = pep[0],pep[1]
@@ -62,5 +81,3 @@ def run_regex_search(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
 
 
 
-print("\n=== Regex search() ===")
-print(run_regex_search(TargetDB, QueryDB))
