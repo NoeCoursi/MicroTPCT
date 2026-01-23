@@ -1,5 +1,4 @@
-import sys, re
-import pandas as pd
+import re
 from collections import defaultdict
 
 from microtpct.core.databases import TargetDB, QueryDB

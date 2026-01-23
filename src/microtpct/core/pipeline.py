@@ -16,11 +16,9 @@ from microtpct.io.converters import build_database
 from microtpct.core.databases import TargetDB
 
 
-from microtpct.core.match.match_find import run_find
+from microtpct.core.match import MATCHING_ENGINES, run_find, run_ahocorasick
 from microtpct.core.match.wildcards_matcher import run_wildcard_match
 
-
-# from microtpct.core.match_engines import MATCHING_ENGINES, list_available_engines
 from microtpct.core.results import MatchResult
 from microtpct.utils.logging import setup_logger
 
@@ -149,14 +147,17 @@ def run_pipeline(
 
     # Run matching engine
 
-    logger.info(f"Running matching engine: {matching_engine} {"+ wildcards match" if effective_allow_wildcard else ""}")
-
     # Strict matching (ignore wildcard)
-    if matching_engine == "find": ### TODO : Make it modular using MATCHING_ENGINES ??????
-        result_strict_matching = run_find(target_db, query_db)
-        total_n_matches = result_strict_matching.__len__()
-    else:
+    try:
+        matching_func = MATCHING_ENGINES[matching_engine]
+    except KeyError:
         raise ValueError(f"Unsupported matching engine: '{matching_engine}'")
+
+    # Execute the engine
+    logger.info(f"Running matching engine: {matching_engine} {"+ wildcards match" if effective_allow_wildcard else ""}")
+    result_strict_matching = matching_func(target_db, query_db)
+
+    total_n_matches = result_strict_matching.__len__() # Store number of matches
     
     # Wildcard matching
     if effective_allow_wildcard:
@@ -205,7 +206,8 @@ run_pipeline(
     target_file = r"C:\Users\huawei\Desktop\uniprotkb_proteome_UP000000803_2025_11_25.fasta",
     query_file = r"c:\Users\huawei\Desktop\Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613.xlsx",
     allow_wildcard = True,
-    matching_engine = "find",
+    matching_engine = "aho",
+    log_file="logs/test_pipeline.log",
 
     wildcards = "X"
 )
