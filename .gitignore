@@ -23,3 +23,6 @@ Thumbs.db
 build/
 dist/
 
+# rawa_data
+
+raw_data/
