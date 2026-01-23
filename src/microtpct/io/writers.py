@@ -9,6 +9,7 @@
 # J_peptide_seq: the peptidic sequence of the micropeptide with Isoleucine instead of Leucine
 # start_position : the starting position of the peptide in the protein sequence it matched with
 
+from ast import Dict
 import csv
 import pandas as pd
 from pathlib import Path
@@ -79,18 +80,32 @@ def write_outputs_to_csv(algorithm_output, algorithm_output_X , algorithm_input,
     
                         # Compute Metrics 
 
-    # Total number of peptides
-    # Computed by counting unique micropeptide's IDs 
-    #total_peptides = len(algorithm_output['peptide_ID'])
-    # Number of peptides matched to proteins
-    #matched_peptides = len(algorithm_output['protein_ID'].dropna())
-
-    # Creates a DataFrame for metrics
-    #metrics_df = pd.DataFrame({
-    #    "total_peptides": [total_peptides],
-    #    "matched_peptides": [matched_peptides]
-    #})
+    # Indexing helpers defined in class MatchResult used here: 
+    # by_query(self) Group matches by query (peptide) ID
+    # by_target(self) Group matches by target (protein) ID
     
+    # Analysis helpers defined in class MatchResult used here:
+    # matches_for_query
+    # n_matches_for_query
+    # peptides_with_no_match
+    # n_unique_queries
+    # n_unique_targets
+    
+    # Compute metrics with the above helpers
+    total_peptides = len(algorithm_input)
+    matched_peptides = algorithm_output.n_unique_queries()
+    unmatched_peptides = len(algorithm_output.peptides_with_no_match(algorithm_input['ids']))
+    unique_proteins_matched = algorithm_output.n_unique_targets()
+    avg_proteins_per_peptide = ((total_peptides - unmatched_peptides) / matched_peptides) if matched_peptides > 0 else 0
+
+    # Create a DataFrame to hold the metrics
+    metrics_df = pd.DataFrame({
+        'Total_Peptides': [total_peptides],
+        'Matched_Peptides': [matched_peptides],
+        'Unmatched_Peptides': [unmatched_peptides],
+        'Unique_Proteins_Matched': [unique_proteins_matched],
+        'Avg_Proteins_Per_Peptide': [avg_proteins_per_peptide]
+    })
 
     # Creates output path for file 
     metrics_name=month_day_hour_minute+"_"+output_metrics
