@@ -13,7 +13,7 @@ from typing import Optional, List
 from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.validators import validate_protein_input, validate_peptide_input, validates_wildcards
 from microtpct.io.converters import build_database
-from microtpct.core.match import match_ahocorasick
+# from microtpct.core.match import match_ahocorasick
 # from microtpct.core.match_engines import MATCHING_ENGINES, list_available_engines
 from microtpct.core.results import MatchResult
 from microtpct.utils.logging import setup_logger
@@ -49,32 +49,40 @@ def run_pipeline(
     # Read inputs
     logger.info(f"Reading target file: {target_file}")
     target_inputs = list(
-        read_file(target_file, role=SequenceRole.PROTEIN, format=target_format, sep=target_separator)
+        read_file(target_file, role=SequenceRole.PROTEIN, format=target_format) #, sep=target_separator) + colomn
     )
 
     logger.info(f"Reading query file: {query_file}")
     query_inputs = list(
-        read_file(query_file, role=SequenceRole.PEPTIDE, format=query_format, sep=query_separator)
+        read_file(query_file, role=SequenceRole.PEPTIDE, format=query_format)#, sep=query_separator)
     )
 
     logger.info(f"Loaded {len(target_inputs)} target sequences")
     logger.info(f"Loaded {len(query_inputs)} query peptides")
 
     # Validate inputs
+    if allow_wildcard and not wildcards: # Strange to allow wildcard and get empty wildcard
+        logger.warning(
+                    "Wildcard matching is enabled (allow_wildcard=True), but no wildcard characters were provided. "
+                    "Wildcard matching will be ignored and strict matching will be applied."
+                    )
+
+    if wildcards: # allways test wildcards even if not allowed by user to log warning later on
+        wildcards = set(wildcards) if isinstance(wildcards, List) else {wildcards}
+        validates_wildcards(wildcards)
+        if allow_wildcard:
+            logger.info(f"Wildcard character(s) {list(wildcards)} valid and enable")
+
     logger.info("Validating target inputs")
     for obj in target_inputs:
         validate_protein_input(obj, wildcards)
-
+    
     logger.info("Validating query inputs")
     for obj in query_inputs:
         validate_peptide_input(obj)
 
     logger.info("All inputs are valid")
     
-    if wildcards:
-        wildcards = set(wildcards) if isinstance(wildcards, List) else {wildcards}
-        validates_wildcards(wildcards)
-        logger.info("Wildcard parameter are valid")
 
 
     # # ----------------------------
@@ -117,3 +125,12 @@ def run_pipeline(
     # logger.info("Pipeline finished successfully")
 
     # return result
+
+
+run_pipeline(
+    target_file = r"C:\Users\huawei\Desktop\uniprotkb_proteome_UP000000803_2025_11_25.fasta",
+    query_file = r"c:\Users\huawei\Desktop\Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613.xlsx",
+    allow_wildcard = True,
+
+    wildcards = "X"
+)

@@ -15,7 +15,7 @@ from microtpct.utils import setup_logger
 
 # Biological constants 
 
-AMINO_ACIDS = set("GPAVLIMCFYWHKRQNEDST")
+AMINO_ACIDS = set("GPAVLIMCFYWHKRQNEDST") | set("OU") # Commons amino acids + rares
 
 
 logger = setup_logger(__name__)
@@ -34,7 +34,7 @@ def validate_sequence_input(seq: SequenceInput) -> None:
 
 # Protein validation
 
-def validate_protein_input(prot: ProteinInput, wildcards: Optional[str | List[str]] = None) -> None:
+def validate_protein_input(prot: ProteinInput, wildcards: Optional[set] = set()) -> None:
     if type(prot) is not ProteinInput:
         raise TypeError(
             f"validate_protein_input() expects ProteinInput, got {type(prot).__name__}"
@@ -48,7 +48,7 @@ def validate_protein_input(prot: ProteinInput, wildcards: Optional[str | List[st
     if not isinstance(prot.accession, str):
         raise TypeError("ProteinInput.accession must be a string.")
 
-    _validate_amino_acid_sequence(prot.sequence, obj_id=prot.accession)
+    _validate_amino_acid_sequence(prot.sequence, obj_id=prot.accession, wildcards=wildcards)
 
 
 # Peptide validation
@@ -71,8 +71,13 @@ def validate_peptide_input(pep: PeptideInput) -> None:
 
 
 # Internal helpers
-def _validate_amino_acid_sequence(sequence: str, obj_id: str | None = None, wildcards: Optional[set] = None) -> None:
-    invalid = set(sequence.upper()) - AMINO_ACIDS.add(wildcards)
+def _validate_amino_acid_sequence(sequence: str, obj_id: str | None = None, wildcards: Optional[set] = set()) -> None:
+    
+    amino_acids = AMINO_ACIDS.copy()
+    if wildcards:
+        amino_acids = amino_acids.union(wildcards)
+
+    invalid = set(sequence.upper()) - amino_acids
     if invalid:
         id_info = f" for object '{obj_id}'" if obj_id else ""
         logger.error(
@@ -83,7 +88,7 @@ def _validate_amino_acid_sequence(sequence: str, obj_id: str | None = None, wild
         )
 
 
-def validates_wildcards(wildcards: Optional[set] = None):
+def validates_wildcards(wildcards: set):
     overlapping = wildcards & AMINO_ACIDS
 
     if overlapping:
@@ -93,4 +98,3 @@ def validates_wildcards(wildcards: Optional[set] = None):
         raise ValueError(
             f"Invalid wildcard(s) found: {sorted(overlapping)} overlap with standard amino acids."
         )
-    
