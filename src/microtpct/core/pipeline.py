@@ -13,6 +13,7 @@ from typing import Optional, List
 from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.validators import validate_protein_input, validate_peptide_input, validates_wildcards
 from microtpct.io.converters import build_database
+from microtpct.core.databases import TargetDB
 # from microtpct.core.match import match_ahocorasick
 # from microtpct.core.match_engines import MATCHING_ENGINES, list_available_engines
 from microtpct.core.results import MatchResult
@@ -102,8 +103,7 @@ def run_pipeline(
             logger.warning(
                 f"Strict matching requested (allow_wildcard=False), but {n_with_wildcards} target sequence(s) "
                 f"contain wildcard character(s) ({list(wildcards)}), which may represent ambiguous amino acids. "
-                "Strict matching will still be applied according to the parameter. "
-                "To enable wildcard matching, rerun the pipeline with allow_wildcard=True."
+                "Strict matching will be applied. Use allow_wildcard=True to enable wildcard matching."
             )
 
         else:
@@ -121,25 +121,27 @@ def run_pipeline(
     logger.info("All inputs are valid")
     
 
+    # Build databases
 
-    # # ----------------------------
-    # # Step 3 — Build databases
-    # # ----------------------------
+    logger.info("Building target database")
+    target_db = build_database(target_inputs, role=SequenceRole.PROTEIN)
 
-    # logger.info("Building target database")
-    # target_db = build_database(target_inputs, role=SequenceRole.PROTEIN)
+    if effective_allow_wildcard: # Add special attribute and method if wildcard search enable
+        _inject_wildcard_metadata(target_db, target_inputs)
 
-    # logger.info("Building query database")
-    # query_db = build_database(query_inputs, role=SequenceRole.PEPTIDE)
+    logger.info("Building query database")
+    query_db = build_database(query_inputs, role=SequenceRole.PEPTIDE)
 
-    # logger.info(
-    #     f"TargetDB: {target_db.size} sequences "
-    #     f"({target_db.n_unique_accessions()} unique accessions)"
-    # )
-    # logger.info(
-    #     f"QueryDB: {query_db.size} peptides "
-    #     f"({query_db.n_unique_accessions()} unique accessions)"
-    # )
+    logger.info(
+        f"TargetDB: {target_db.size} sequences "
+        f"({target_db.n_unique_accessions()} unique accessions)"
+    )
+    logger.info(
+        f"QueryDB: {query_db.size} peptides "
+        f"({query_db.n_unique_accessions()} unique accessions)"
+    )
+
+    return target_db, query_db
 
     # # ----------------------------
     # # Step 4 — Run matching engine
@@ -164,10 +166,36 @@ def run_pipeline(
     # return result
 
 
-run_pipeline(
+def _inject_wildcard_metadata(target_db, target_inputs):
+    contains_wildcard = [
+        getattr(obj, "contain_wildcards")
+        for obj in target_inputs
+    ]
+
+    object.__setattr__(target_db, "contains_wildcards", contains_wildcard)
+
+    from types import MethodType
+
+    def _get_wildcard_targets(self):
+        indices = [i for i, has_wc in enumerate(self.contains_wildcards) if has_wc]
+
+        return TargetDB(
+            ids=[self.ids[i] for i in indices],
+            sequences=[self.sequences[i] for i in indices],
+            ambiguous_il_sequences=[self.ambiguous_il_sequences[i] for i in indices],
+            accessions=[self.accessions[i] for i in indices],
+        )
+
+    target_db.get_wildcard_targets = MethodType(_get_wildcard_targets, target_db)
+
+
+
+target, query = run_pipeline(
     target_file = r"C:\Users\huawei\Desktop\uniprotkb_proteome_UP000000803_2025_11_25.fasta",
     query_file = r"c:\Users\huawei\Desktop\Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613.xlsx",
-    allow_wildcard = False,
+    allow_wildcard = True,
 
     wildcards = "X"
 )
+
+print(target.get_wildcard_targets().to_dataframe())
