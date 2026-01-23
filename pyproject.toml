@@ -1,6 +1,14 @@
 [project]
-name = "microtpct"
+name = "microTPCT"
 version = "0.0.1-dev"
+description = "Microprotein bioinformatics toolkit"
+authors = ["Your Name <you@example.com>"]
 
+# Find packages in src/
 [tool.setuptools.packages.find]
 where = ["src"]
+
+
+# entry point
+[project.scripts]
+microTPCT = "microtpct.interfaces.cli:cli"
