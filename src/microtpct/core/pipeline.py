@@ -61,22 +61,59 @@ def run_pipeline(
     logger.info(f"Loaded {len(query_inputs)} query peptides")
 
     # Validate inputs
+    effective_allow_wildcard = allow_wildcard # The real allow_wildcard
     if allow_wildcard and not wildcards: # Strange to allow wildcard and get empty wildcard
         logger.warning(
                     "Wildcard matching is enabled (allow_wildcard=True), but no wildcard characters were provided. "
                     "Wildcard matching will be ignored and strict matching will be applied."
                     )
+        effective_allow_wildcard = False
+
 
     if wildcards: # allways test wildcards even if not allowed by user to log warning later on
-        wildcards = set(wildcards) if isinstance(wildcards, List) else {wildcards}
+        wildcards = set(wildcards) if isinstance(wildcards, list) else {wildcards}
+
         validates_wildcards(wildcards)
-        if allow_wildcard:
+
+        if effective_allow_wildcard:
             logger.info(f"Wildcard character(s) {list(wildcards)} valid and enable")
 
+
     logger.info("Validating target inputs")
+
+    # Validate protein input and return True if object contain wildcards
+    n_with_wildcards = 0
+
     for obj in target_inputs:
-        validate_protein_input(obj, wildcards)
+        wildcards_detected = validate_protein_input(obj, wildcards)
+
+        if wildcards_detected:
+            n_with_wildcards += 1
+
+        if effective_allow_wildcard:
+            object.__setattr__(obj, "contain_wildcards", wildcards_detected)
+
+
+    # Inform user about detected wildcards according to matching mode
+    if n_with_wildcards > 0:
+
+        if not effective_allow_wildcard:
+            # Strict matching requested
+            logger.warning(
+                f"Strict matching requested (allow_wildcard=False), but {n_with_wildcards} target sequence(s) "
+                f"contain wildcard character(s) ({list(wildcards)}), which may represent ambiguous amino acids. "
+                "Strict matching will still be applied according to the parameter. "
+                "To enable wildcard matching, rerun the pipeline with allow_wildcard=True."
+            )
+
+        else:
+            # Wildcard matching enabled
+            logger.info(
+                f"{n_with_wildcards} target sequence(s) contain wildcard character(s) ({list(wildcards)}). "
+                "These sequences will be processed using wildcard-enabled matching as requested."
+            )
     
+
     logger.info("Validating query inputs")
     for obj in query_inputs:
         validate_peptide_input(obj)
@@ -130,7 +167,7 @@ def run_pipeline(
 run_pipeline(
     target_file = r"C:\Users\huawei\Desktop\uniprotkb_proteome_UP000000803_2025_11_25.fasta",
     query_file = r"c:\Users\huawei\Desktop\Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613.xlsx",
-    allow_wildcard = True,
+    allow_wildcard = False,
 
     wildcards = "X"
 )

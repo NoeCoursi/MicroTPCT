@@ -34,7 +34,7 @@ def validate_sequence_input(seq: SequenceInput) -> None:
 
 # Protein validation
 
-def validate_protein_input(prot: ProteinInput, wildcards: Optional[set] = set()) -> None:
+def validate_protein_input(prot: ProteinInput, wildcards: Optional[set] = None) -> bool:
     if type(prot) is not ProteinInput:
         raise TypeError(
             f"validate_protein_input() expects ProteinInput, got {type(prot).__name__}"
@@ -48,10 +48,13 @@ def validate_protein_input(prot: ProteinInput, wildcards: Optional[set] = set())
     if not isinstance(prot.accession, str):
         raise TypeError("ProteinInput.accession must be a string.")
 
-    _validate_amino_acid_sequence(prot.sequence, obj_id=prot.accession, wildcards=wildcards)
+    # Returns True if wildcard detected, False otherwise
+    return _validate_amino_acid_sequence(
+        prot.sequence,
+        obj_id=prot.accession,
+        wildcards=wildcards,
+    )
 
-
-# Peptide validation
 
 def validate_peptide_input(pep: PeptideInput) -> None:
     if type(pep) is not PeptideInput:
@@ -63,22 +66,33 @@ def validate_peptide_input(pep: PeptideInput) -> None:
 
     if not pep.accession:
         raise ValueError("PeptideInput.accession cannot be empty.")
-    
+
     if not isinstance(pep.accession, str):
         raise TypeError("PeptideInput.accession must be a string.")
 
-    _validate_amino_acid_sequence(pep.sequence, obj_id=f"{pep.accession} (sequence: {pep.sequence})")
+    # Peptides never allow wildcards → strict validation
+    _validate_amino_acid_sequence(
+        pep.sequence,
+        obj_id=f"{pep.accession} (sequence: {pep.sequence})"
+    )
 
 
-# Internal helpers
-def _validate_amino_acid_sequence(sequence: str, obj_id: str | None = None, wildcards: Optional[set] = set()) -> None:
-    
-    amino_acids = AMINO_ACIDS.copy()
-    if wildcards:
-        amino_acids = amino_acids.union(wildcards)
+def _validate_amino_acid_sequence(
+    sequence: str,
+    obj_id: str | None = None,
+    wildcards: Optional[set] = None,
+) -> bool:
 
-    invalid = set(sequence.upper()) - amino_acids
+    if wildcards is None:
+        wildcards = set()
+
+    invalid = set(sequence.upper()) - AMINO_ACIDS
+
     if invalid:
+        # All invalid characters are allowed wildcards
+        if invalid.issubset(wildcards):
+            return True
+
         id_info = f" for object '{obj_id}'" if obj_id else ""
         logger.error(
             f"Invalid amino acids found{id_info}: {', '.join(sorted(invalid))}"
@@ -86,6 +100,9 @@ def _validate_amino_acid_sequence(sequence: str, obj_id: str | None = None, wild
         raise ValueError(
             f"Invalid amino acids found{id_info}: {', '.join(sorted(invalid))}"
         )
+
+    # No wildcard, sequence is clean
+    return False
 
 
 def validates_wildcards(wildcards: set):
