@@ -3,6 +3,8 @@ from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.converters import *
 from pathlib import Path
 
+
+
 peptide_file_path = Path("path/to/peptides.xlsx")
 proteome_file_path = Path("path/to/proteome.fasta")
 

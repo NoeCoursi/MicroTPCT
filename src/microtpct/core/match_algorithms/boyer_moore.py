@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import sys
 import pybmoore  # type: ignore
 import pandas as pd
