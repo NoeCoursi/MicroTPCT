@@ -1,10 +1,11 @@
+from microtpct.core.flag_wildcard import run_flagwc
 from microtpct.io.validators import validate_peptide_input, validate_protein_input
 from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.converters import *
 from pathlib import Path
 
-peptide_file_path = Path("path/to/peptides.xlsx")
-proteome_file_path = Path("path/to/proteome.fasta")
+peptide_file_path = Path("path/Liste_peptides.xlsx")
+proteome_file_path = Path("path/prot.fasta")
 
 
 def mini_pipeline(path, role: SequenceRole):
@@ -20,25 +21,34 @@ def mini_pipeline(path, role: SequenceRole):
     #     for obj in sequences:
     #         validate_peptide_input(obj)
 
-    # Build DB
-    db = build_database(sequences, role=role)
-
+    if role == SequenceRole.PROTEIN:
+        # Flag wildcards if protein
+        flaged_sequences = run_flagwc(
+            inputs=sequences,
+            wildcards=["X"],
+            role=role
+            )
+        # Build DB
+        db = build_database(flaged_sequences, role=role)
+    else:
+        # Build DB directly if peptide
+        db = build_database(sequences, role=role)
     return db
 
 
+#query_db = mini_pipeline(peptide_file_path, SequenceRole.PEPTIDE)
 
 
-query_db = mini_pipeline(peptide_file_path, SequenceRole.PEPTIDE)
-
-
-print(query_db.to_dataframe())
+#print(query_db.to_dataframe())
 
 
 target_db = mini_pipeline(proteome_file_path, SequenceRole.PROTEIN)
 
-print(target_db.to_dataframe())
+#print(target_db.to_dataframe())
 
 
+
+"""
 # from microtpct.core.match_algorithms.match_find import run_find
 # from microtpct.core.match_algorithms.match_ahocorasick import run_ahocorasick
 # from microtpct.core.match_algorithms.match_ahocorasick_rs import run_ahocorasick_rs
@@ -64,3 +74,4 @@ print(matching_results.n_unique_targets_for_query("Q001721"))
 print([qid for qid in query_db.ids if matching_results.n_unique_targets_for_query(qid) > 1])
 
 print(matching_results.peptides_with_no_match(query_db.ids))
+"""

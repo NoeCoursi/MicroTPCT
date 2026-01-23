@@ -68,6 +68,7 @@ class TargetDB(SequenceDB):
 
     Contains protein sequences used as matching targets.
     """
+    wildcard_positions: List[List[int]]
     pass
 
 
