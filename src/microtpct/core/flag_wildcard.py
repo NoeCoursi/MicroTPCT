@@ -4,7 +4,7 @@ from microtpct.io.readers import SequenceRole
 
 def run_flagwc(
         inputs: ProteinInput,
-        wildcards: str | list,
+        wildcards: set,
         role: SequenceRole = SequenceRole.PROTEIN,
         ):
     """
@@ -28,10 +28,7 @@ def run_flagwc(
         else:
             raise ValueError(f"Unknown SequenceRole: {role}")
         # If wildcards is a list, transform it into a set for faster lookup
-        if isinstance(wildcards, list):
-            wildcard_set = set(wildcards)
-        else:
-            wildcard_set = {wildcards}
+        wildcard_set = wildcards
         positions = [i for i, aa in enumerate(obj.sequence) if aa in wildcard_set]
         # Create a new ProteinInput with updated wildcard_positions
         flagged_obj = ProteinInput(
@@ -40,5 +37,4 @@ def run_flagwc(
             wildcard_positions=positions
         )
         flagged_sequences.append(flagged_obj)
-        #print(f"Flagged {len(positions)} wildcards in sequence {obj.accession} at positions {positions}")
     return flagged_sequences
