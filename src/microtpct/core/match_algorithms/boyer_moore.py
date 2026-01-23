@@ -15,9 +15,7 @@ POS_TO_TARGET = None
 SEPARATOR = "#" # Separator inserted between concatenated sequences
 
 
-
-
-def build_big_text(target_db: TargetDB) -> tuple:
+def concatenate_prot(target_db: TargetDB) -> tuple:
     """
     Concatenate all target sequences into a single text string.
     Build a mapping from global position to (target_id, offset).
@@ -76,9 +74,6 @@ def locate_target(global_pos) -> tuple:
             return tid, global_pos - start
     return None, None
 
-
-
-
 def process_query(query: list) -> tuple:
     """
     Search for occurrences of a query sequence in the concatenated text.
@@ -103,35 +98,16 @@ def process_query(query: list) -> tuple:
 
     return qrec_id, hits
 
-def dict2panda(data: dict) -> pd.DataFrame:
-    """
-    Convert a dictionary {query_id: [(target_id, pos), ...]} into a DataFrame.
-
-    Args:
-        data (dict): search results
-
-    Returns:
-        pd.DataFrame: structured table of results
-    """
-    rows = []
-    for key, tuples in data.items():
-        for t in tuples:
-            rows.append((key, *t))
-    num_cols = len(rows[0])
-    columns = ["Key"] + [f"Val{i+1}" for i in range(num_cols-1)]
-    return pd.DataFrame(rows, columns=columns)
-
 
 def run_boyer_moore(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
 
+    print("=================")
+    print("===Boyer-Moore===")
+    print("=================")
     # Build concatenated text and position mapping
-    big_text, pos_map = build_big_text(target_db)
+    big_text, pos_map = concatenate_prot(target_db)
+    queries = [(t_id, str(t_seq)) for t_id, t_seq in zip(query_db.ids, query_db.ambiguous_il_sequences)]
 
-    
-
-    queries = [(t_id, str(t_seq)) for t_id, t_seq in zip(target_db.ids, target_db.ambiguous_il_sequences)]
-
-    # DONE
 
     # Perform parallel search using multiprocessing
     with Pool(
@@ -140,10 +116,7 @@ def run_boyer_moore(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
         initargs=(big_text, pos_map),
     ) as pool:
         all_results = pool.map(process_query, queries)
+    print(all_results)
 
-        print(all_results)
-        #results_dataframe = dict2panda(dict(all_results))
-        #print(results_dataframe)
-    
     return
 
