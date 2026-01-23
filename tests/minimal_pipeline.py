@@ -3,8 +3,8 @@ from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.converters import *
 from pathlib import Path
 
-peptide_file_path = Path(r"C:\Users\huawei\Desktop\Liste_peptides.xlsx")
-proteome_file_path = Path(r"C:\Users\huawei\Downloads\uniprotkb_proteome_UP000000803_2025_11_25.fasta")
+peptide_file_path = Path("path/to/peptides.xlsx")
+proteome_file_path = Path("path/to/proteome.fasta")
 
 
 def mini_pipeline(path, role: SequenceRole):
@@ -39,9 +39,21 @@ target_db = mini_pipeline(proteome_file_path, SequenceRole.PROTEIN)
 print(target_db.to_dataframe())
 
 
-from microtpct.core.match_find import run_find
+# from microtpct.core.match_find import run_find
+# from microtpct.core.match_ahocorasick import run_ahocorasick
+# from microtpct.core.match_ahocorasick_rs import run_ahocorasick_rs
+# from microtpct.core.match_blast_basic import run_blast
+from microtpct.core.match_blast import run_blast
 
-matching_results = run_find(target_db, query_db)
+
+
+# matching_results = run_ahocorasick(target_db, query_db)
+# matching_results = run_ahocorasick(target_db, query_db)
+# matching_results = run_ahocorasick_rs(target_db, query_db)
+matching_results = run_blast(target_db, query_db)
+
+
+print(matching_results)
 
 print(matching_results)
 

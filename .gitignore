@@ -22,3 +22,10 @@ Thumbs.db
 *.egg-info/
 build/
 dist/
+
+
+# DATA
+raw_data/
+
+src/microtpct/core/plot_automaton.py
+
