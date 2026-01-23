@@ -23,9 +23,3 @@ Thumbs.db
 build/
 dist/
 
-
-# DATA
-raw_data/
-
-src/microtpct/core/plot_automaton.py
-
