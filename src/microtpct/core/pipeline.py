@@ -17,7 +17,7 @@ from microtpct.core.databases import TargetDB
 
 
 from microtpct.core.match import MATCHING_ENGINES, run_find, run_ahocorasick
-from microtpct.core.match.test import run_wildcard_match
+from microtpct.core.match.wildcards_matcher import run_wildcard_match
 
 from microtpct.core.results import MatchResult
 from microtpct.utils.logging import setup_logger
@@ -159,16 +159,11 @@ def run_pipeline(
 
     total_n_matches = result_strict_matching.__len__() # Store number of matches
 
-    import time
-
     # Wildcard matching
     if effective_allow_wildcard:
-        t1 = time.time()
         result_wildcard_matching = run_wildcard_match(target_db.get_wildcard_targets(), # Only sequence that contain wildcards
                                                        query_db,
                                                        wildcards)
-        t2 = time.time()
-        print(t2-t1)
 
         total_n_matches += result_wildcard_matching.__len__()
 
