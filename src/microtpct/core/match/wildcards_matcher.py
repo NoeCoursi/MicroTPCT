@@ -15,7 +15,7 @@ def get_peptide_dict(query_db: QueryDB) -> dict[int, list[tuple[str, str]]]:
     return query_length_dict
 
 
-def around_wildcards_kmer_set(sequence: str, k: int, wildcards: set) -> tuple[set[str], dict[int]]:
+def around_wildcards_kmer_set(sequence: str, k: int, wildcards: set) -> tuple[set[str], dict[str, int]]:
     
     n = len(sequence)
     kmer_set = set()
@@ -33,40 +33,55 @@ def around_wildcards_kmer_set(sequence: str, k: int, wildcards: set) -> tuple[se
 
     return kmer_set, kmer_position_table
 
+
+def compute_kmers_for_wildcards(sequence: str, lengths: set[int], wildcards: set[str]) -> dict[int, dict[str, list[int]]]:
+    n = len(sequence)
+    kmers_by_length = {k: defaultdict(list) for k in lengths}
+
+    for i, c in enumerate(sequence):
+        if c in wildcards:
+            for k in lengths:
+                start = max(0, i - k + 1)
+                end = min(i + 1, n - k + 1)
+                for j in range(start, end):
+                    kmer = sequence[j:j+k]
+                    kmers_by_length[k][kmer].append(j)
+
+    return kmers_by_length
+
+
 def match_with_wildcards(pattern: str, target: str, wildcards: set[str]) -> bool:
     for p, t in zip(pattern, target):
         if p not in wildcards and p != t:
             return False
     return True
 
-def run_wildcard_match(target_db: TargetDB, query_db: QueryDB, wildcards: set) -> MatchResult:
-    
-    # dictionnary of peptide through their sequence length
-    query_length_dict = get_peptide_dict(query_db)
 
+def run_wildcard_match(target_db: TargetDB, query_db: QueryDB, wildcards: set[str]) -> MatchResult:
+    query_length_dict = get_peptide_dict(query_db)
     matches: list[Match] = []
 
-    # Loop over target
+    # Toutes les longueurs de peptides
+    all_lengths = set(query_length_dict.keys())
+
+    # Boucle sur chaque target
     for t_id, t_seq in zip(target_db.ids, target_db.ambiguous_il_sequences):
+        # Pré-calcul des k-mers pour toutes les longueurs
+        kmers_by_length = compute_kmers_for_wildcards(t_seq, all_lengths, wildcards)
 
-        # Loop over lenght in query_length_dict -> First: Only peptides of lenght 6, Then: lenght 7, etc.
+        # Boucle sur chaque longueur de peptide
         for pep_len, pep_list in query_length_dict.items():
+            kmer_dict = kmers_by_length[pep_len]
 
-            # Cut targeted protein in a k-mer set that contain wildcards for every peptide length
-            # k = lenght of peptides (pep_len)
-            kmer_set, kmer_position_table = around_wildcards_kmer_set(t_seq, pep_len, wildcards)
-
-            # Loop over evry peptides of lenght k (pep_len)
+            # Boucle sur chaque peptide de cette longueur
             for pep_id, pep_seq in pep_list:
-                
-                # Compares every k-mer with the peptide
-                for kmer in kmer_set:
-                    match = match_with_wildcards(kmer, pep_seq, wildcards)
-
-                    if match :
-                        matches.append(Match(
-                            query_id=pep_id,
-                            target_id=t_id,
-                            position=kmer_position_table.get(kmer)))
+                for kmer, positions in kmer_dict.items():
+                    if match_with_wildcards(kmer, pep_seq, wildcards):
+                        for pos in positions:
+                            matches.append(Match(
+                                query_id=pep_id,
+                                target_id=t_id,
+                                position=pos
+                            ))
 
     return MatchResult(matches)
