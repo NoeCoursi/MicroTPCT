@@ -158,11 +158,12 @@ def run_pipeline(
     result_strict_matching = matching_func(target_db, query_db)
 
     total_n_matches = result_strict_matching.__len__() # Store number of matches
-    
+
     # Wildcard matching
     if effective_allow_wildcard:
         result_wildcard_matching = run_wildcard_match(target_db.get_wildcard_targets(), # Only sequence that contain wildcards
-                                                       query_db)
+                                                       query_db,
+                                                       wildcards)
 
         total_n_matches += result_wildcard_matching.__len__()
 
@@ -201,8 +202,8 @@ run_pipeline(
     target_file = r"C:\Users\huawei\Desktop\uniprotkb_proteome_UP000000803_2025_11_25.fasta",
     query_file = r"c:\Users\huawei\Desktop\Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613.xlsx",
     allow_wildcard = True,
-    matching_engine = "aho",
-    log_file="logs/test_pipeline.log",
+    matching_engine = "find",
+    # log_file="logs/test_pipeline.log",
 
     wildcards = "X"
 )
