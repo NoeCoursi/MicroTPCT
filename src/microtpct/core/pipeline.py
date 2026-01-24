@@ -168,14 +168,9 @@ def run_pipeline(
 
     
     logger.info(f"Matching completed: {total_n_matches} total matches")
-
-    # # ----------------------------
-    # # Done
-    # # ----------------------------
-
+ 
+    # Done
     # logger.info("Pipeline finished successfully")
-
-    # return result
 
 
 def _inject_wildcard_metadata(target_db, target_inputs):
