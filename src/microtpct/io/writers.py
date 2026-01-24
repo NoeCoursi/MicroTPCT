@@ -1,23 +1,146 @@
-# Description : 
-# This module contains functions to write the predicted true micropeptides to a CSV file
-# 
-
-# The output mipep.csv file contains the following columns:
-# peptide_ID: the ID of the peptide that was created at the start
-# protein_ID: the ID of the canonical protein's peptide to which it matched
-# peptide_seq: the peptidic sequence of the micropeptide
-# J_peptide_seq: the peptidic sequence of the micropeptide with Isoleucine instead of Leucine
-# start_position : the starting position of the peptide in the protein sequence it matched with
-
-from ast import Dict
-import csv
-import pandas as pd
-from pathlib import Path
-import microtpct
+import re
 from datetime import datetime
+from pathlib import Path
+from typing import Literal
+import pandas as pd
 
-# algorithm_output is the output from the algorithm/alignment module
-    # it's an object from class MatchResult
+from microtpct.core.databases import QueryDB, TargetDB
+from microtpct.core.results import MatchResult
+
+
+PathLike = str | Path
+
+def _sanitize_name(name: str) -> str:
+
+    name = name.strip().lower()
+    name = re.sub(r"\s+", "_", name)
+    name = re.sub(r"[^a-zA-Z0-9_\-]", "", name)
+
+    return name
+
+def _timestamp():
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+
+def build_matching_result_table(query_db: QueryDB, result_strict: MatchResult, result_wildcard: MatchResult | None = None):
+    """
+    Build the final matching result table for MicroTPCT.
+
+    Each row corresponds to exactly one of:
+        - one strict match
+        - one wildcard match
+        - no match at all
+
+    Strict and wildcard matches never appear on the same row.
+
+    Output columns:
+        - all columns from query_db
+        - strict_matching_target_id
+        - strict_matching_position
+        - wildcard_matching_target_id
+        - wildcard_matching_position
+        - matching_type  (strict / wildcard / None)
+    """
+
+    # Get query (peptides) dataframe 
+    df_query = query_db.to_dataframe()
+
+    # Prepare base (queries without any match)
+    base = df_query.copy()
+    base["strict_matching_target_id"] = None
+    base["strict_matching_position"] = None
+    base["wildcard_matching_target_id"] = None
+    base["wildcard_matching_position"] = None
+    base["matching_type"] = None
+
+    # Strict match
+    df_strict = result_strict.to_dataframe().rename(columns={
+        "query_id": "id",
+        "target_id": "strict_matching_target_id",
+        "position": "strict_matching_position"
+    })
+    
+    # Join with query to recover query metadata
+    df_strict = df_query.merge(df_strict, on="id", how="inner")
+
+    # Add empty wildcard columns
+    df_strict["wildcard_matching_target_id"] = None
+    df_strict["wildcard_matching_position"] = None
+    df_strict["matching_type"] = "strict"
+
+    # Wildcards match
+    df_wildcard = None # Initialisation required for later merge
+    if result_wildcard is not None:
+        df_wildcard = result_wildcard.to_dataframe().rename(columns={
+            "query_id": "id",
+            "target_id": "wildcard_matching_target_id",
+            "position": "wildcard_matching_position"
+        })
+
+        # Join with query to recover query metadata
+        df_wildcard = df_query.merge(df_wildcard, on="id", how="inner")
+
+        # Add empty strict columns
+        df_wildcard["strict_matching_target_id"] = None
+        df_wildcard["strict_matching_position"] = None
+        df_wildcard["matching_type"] = "wildcard"
+
+    # Queries with no match att all
+    matched_ids = set(df_strict["id"].unique())
+
+    if df_wildcard is not None:
+        matched_ids.update(df_wildcard["id"].unique())
+
+    df_nomatch = base[~base["id"].isin(matched_ids)]
+
+    # Final union
+    result = [df_nomatch, df_strict]
+
+    if result is not None:
+        result.append(df_wildcard)
+
+    df_result = (
+        pd.concat(result, ignore_index=True)
+          .sort_values("id")
+          .reset_index(drop=True)
+    )
+
+    return df_result
+
+
+
+def write_outputs(
+    output_path: PathLike,
+    output_format: Literal["csv", "excel"],
+    query_db: QueryDB,
+    target_db: TargetDB,
+    result_strict: MatchResult,
+    result_wildcard: MatchResult | None = None,
+    analysis_name: str | None = None,
+):
+    
+    # Generate name
+    output_path = Path(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    if analysis_name:
+        analysis = _sanitize_name(analysis_name)
+
+    ts = _timestamp() # Get a common timestamp for both output files
+
+    ext = "csv" if output_format == "csv" else "xlsx"
+
+    result_file = Path(output_path, f"microtpct_matching_result{f"_{analysis}" if analysis_name else ""}_{ts}.{ext}")
+    stats_file  = Path(output_path, f"microtpct_statistics{f"_{analysis}" if analysis_name else ""}_{ts}.{ext}")
+    
+    df_result = build_matching_result_table(query_db, result_strict, result_wildcard)
+
+    print(df_result)
+
+
+
+
 
 
 def write_outputs_to_csv(algorithm_output, algorithm_output_X , algorithm_input, file_path=None, output_file="microTPCT.csv", output_metrics="metrics.csv"):

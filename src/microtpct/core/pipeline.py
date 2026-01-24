@@ -8,7 +8,7 @@ This pipeline is interface-agnostic.
 """
 
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Literal
 
 from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.validators import validate_protein_input, validate_peptide_input, validates_wildcards
@@ -19,22 +19,30 @@ from microtpct.core.databases import TargetDB
 from microtpct.core.match import MATCHING_ENGINES, run_find, run_ahocorasick
 from microtpct.core.match.wildcards_matcher import run_wildcard_match
 
-from microtpct.core.results import MatchResult
+from microtpct.io.writers import write_outputs
 from microtpct.utils.logging import setup_logger
 
+
+PathLike = str | Path
 
 # Main pipeline entry point
 
 def run_pipeline(
-    target_file: str | Path,
-    query_file: str | Path,
-    target_format: Optional[str] = None,
-    query_format: Optional[str] = None,
-    target_separator: Optional[str] = None,
-    query_separator: Optional[str] = None,
-    log_file: Optional[str | Path] = None,
+    target_file: PathLike,
+    query_file: PathLike,
 
     *,
+    target_format: str | None = None,
+    query_format: str | None = None,
+    target_separator: str | None = None,
+    query_separator: str | None = None,
+
+    output_path: PathLike | None = None,
+    output_format: Literal["excel", "csv"] = "excel",
+
+    analysis_name: str | None = None,
+    log_file: PathLike | None = None,
+
     allow_wildcard: bool = True,
     wildcards: str | List[str] = "X",
     matching_engine: str = "aho",
@@ -48,7 +56,7 @@ def run_pipeline(
 
     logger = setup_logger(__name__, log_file=log_file)
 
-    logger.info("Starting MicroTPCT pipeline")
+    logger.info(f"Starting MicroTPCT pipeline {f"for analysis: {analysis_name}" if analysis_name else ""}")
 
     # Read inputs
     logger.info(f"Reading target file: {target_file}")
@@ -164,11 +172,26 @@ def run_pipeline(
         result_wildcard_matching = run_wildcard_match(target_db.get_wildcard_targets(), # Only sequence that contain wildcards
                                                        query_db,
                                                        wildcards)
-
+        
         total_n_matches += result_wildcard_matching.__len__()
-
     
     logger.info(f"Matching completed: {total_n_matches} total matches")
+
+    # Generate output 
+    if not output_path:
+        output_path = Path(query_file).parent
+
+    logger.info(f"Saving results in: {output_path}")
+
+    write_outputs(
+        output_path = output_path,
+        output_format = output_format,
+        analysis_name = analysis_name,
+        query_db = query_db,
+        target_db = target_db,
+        result_strict = result_strict_matching,
+        result_wildcard = result_wildcard_matching if effective_allow_wildcard else None,
+    )
  
     # Done
     # logger.info("Pipeline finished successfully")
@@ -203,6 +226,7 @@ run_pipeline(
     query_file = r"c:\Users\huawei\Desktop\Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613.xlsx",
     allow_wildcard = True,
     matching_engine = "find",
+    # analysis_name = "Test of MicroTPCT",
     # log_file="logs/test_pipeline.log",
 
     wildcards = "X"

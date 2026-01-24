@@ -61,7 +61,6 @@ class MatchResult:
         return len(self._matches)
 
 
-
     # Help to extract results at the end 
 
     def to_dataframe(self) -> pd.DataFrame:
@@ -69,10 +68,11 @@ class MatchResult:
         Return the matching results as a pandas DataFrame.
         One row per peptide-to-protein match.
         """
-        return pd.DataFrame(
-            {"query_id": [m.query_id for m in self._matches],
-                "target_id": [m.target_id for m in self._matches],
-                "position": [m.position for m in self._matches]} )
+        return pd.DataFrame({
+            "query_id": [m.query_id for m in self._matches],
+            "target_id": [m.target_id for m in self._matches],
+            "position": [m.position for m in self._matches]
+            })
 
 
     # Indexing helpers

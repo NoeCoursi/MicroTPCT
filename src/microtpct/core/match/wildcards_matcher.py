@@ -61,19 +61,19 @@ def run_wildcard_match(target_db: TargetDB, query_db: QueryDB, wildcards: set[st
     query_length_dict = get_peptide_dict(query_db)
     matches: list[Match] = []
 
-    # Toutes les longueurs de peptides
+    # Get all peptides lenghts
     all_lengths = set(query_length_dict.keys())
 
-    # Boucle sur chaque target
+    # Loop over target
     for t_id, t_seq in zip(target_db.ids, target_db.ambiguous_il_sequences):
-        # Pré-calcul des k-mers pour toutes les longueurs
+        # Compute k-mers for every lenght on target
         kmers_by_length = compute_kmers_for_wildcards(t_seq, all_lengths, wildcards)
 
-        # Boucle sur chaque longueur de peptide
+        # Loop over all peptides
         for pep_len, pep_list in query_length_dict.items():
             kmer_dict = kmers_by_length[pep_len]
 
-            # Boucle sur chaque peptide de cette longueur
+            # Loop over all peptides of same lenght
             for pep_id, pep_seq in pep_list:
                 for kmer, positions in kmer_dict.items():
                     if match_with_wildcards(kmer, pep_seq, wildcards):
