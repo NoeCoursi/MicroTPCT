@@ -38,7 +38,7 @@ def run_pipeline(
     query_separator: str | None = None,
 
     output_path: PathLike | None = None,
-    output_format: Literal["excel", "csv"] = "excel",
+    output_format: Literal["excel", "csv"] = "csv",
 
     analysis_name: str | None = None,
     log_file: PathLike | None = None,
@@ -181,9 +181,9 @@ def run_pipeline(
     if not output_path:
         output_path = Path(query_file).parent
 
-    logger.info(f"Saving results in: {output_path}")
+    logger.info(f"Saving results")
 
-    write_outputs(
+    result_file, stats_file = write_outputs(
         output_path = output_path,
         output_format = output_format,
         analysis_name = analysis_name,
@@ -192,9 +192,11 @@ def run_pipeline(
         result_strict = result_strict_matching,
         result_wildcard = result_wildcard_matching if effective_allow_wildcard else None,
     )
- 
+    
+    logger.info(f"Results written to: {result_file}")
+
     # Done
-    # logger.info("Pipeline finished successfully")
+    logger.info("Pipeline finished successfully")
 
 
 def _inject_wildcard_metadata(target_db, target_inputs):

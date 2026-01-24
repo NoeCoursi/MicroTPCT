@@ -136,8 +136,14 @@ def write_outputs(
     
     df_result = build_matching_result_table(query_db, result_strict, result_wildcard)
 
-    print(df_result)
+    if output_format == "csv":
+        df_result.to_csv(result_file, index=False)
 
+    elif output_format == "excel":
+        with pd.ExcelWriter(result_file, engine="xlsxwriter") as writer:
+            df_result.to_excel(writer, index=False, sheet_name="results")
+
+    return result_file, stats_file
 
 
 
