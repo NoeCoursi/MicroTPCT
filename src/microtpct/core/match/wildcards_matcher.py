@@ -1,5 +1,4 @@
-import sys, re, logging
-import pandas as pd
+import re
 from collections import defaultdict
 from typing import Optional, Set
 
@@ -38,23 +37,7 @@ def kmer_sets_filter(k_mer_set: Set[str], wildcards: list) -> Set[str]:
     """
     return {k for k in k_mer_set if any(c in k for c in wildcards)}
 
-def run_regex_search(target_db: TargetDB, query_db: QueryDB, wildcards: Optional[list] = None) -> MatchResult:
-    
-    print("======================")
-    print("====Regex search()====")
-    print("======================")
-
-    logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s")    
-
-    if wildcards is None:
-        wildcards = ["X"]
-    
-    logging.info(f"Running regex match with : {wildcards} as wildcards")
-
-
-
+def run_wildcard_match(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
     # dictionnary of peptide through their sequence length
     query_length_dict = get_peptide_dict(query_db)
     matches: list[Match] = []

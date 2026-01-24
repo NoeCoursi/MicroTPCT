@@ -68,7 +68,17 @@ class TargetDB(SequenceDB):
 
     Contains protein sequences used as matching targets.
     """
-    pass
+
+    # Modify to_dataframe methode in order to incorporate eventual contain_windcards attribute in output
+    def to_dataframe(self):
+        # Start with parent DataFrame
+        df = super().to_dataframe()
+
+        # Inject contain_wildcard if it exists
+        if hasattr(self, "contains_wildcards"):
+            df["contain_wildcard"] = self.contains_wildcards
+
+        return df
 
 
 class QueryDB(SequenceDB):
