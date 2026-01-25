@@ -25,9 +25,10 @@ def _timestamp():
 
 def build_matching_result_table(
         query_db: QueryDB,
-        result_strict: MatchResult, 
+        target_db: TargetDB,
+        result_strict: MatchResult,
         result_wildcard: MatchResult | None = None
-        ) -> pd.DataFrame :
+        ) -> pd.DataFrame:
     """
     Build the final matching result table for MicroTPCT.
 
@@ -37,60 +38,68 @@ def build_matching_result_table(
         - no match at all
 
     Strict and wildcard matches never appear on the same row.
-
-    Output columns:
-        - all columns from query_db
-        - strict_matching_target_id
-        - strict_matching_position
-        - wildcard_matching_target_id
-        - wildcard_matching_position
-        - matching_type  (strict / wildcard / None)
     """
 
-    # Get query (peptides) dataframe 
+    # --- Build mapping target_id -> accession ---
+    df_target = target_db.to_dataframe()
+    target_id_to_acc = dict(zip(df_target["id"], df_target["accession"]))
+
+    # --- Base query table (all queries, no match by default) ---
     df_query = query_db.to_dataframe()
 
-    # Prepare base (queries without any match)
     base = df_query.copy()
-    base["strict_matching_target_id"] = None
+    base["strict_matching_target_accession"] = None
     base["strict_matching_position"] = None
-    base["wildcard_matching_target_id"] = None
+    base["wildcard_matching_target_accession"] = None
     base["wildcard_matching_position"] = None
-    base["matching_type"] = None
+    base["matching_type"] = "no_match"
 
-    # Strict match
+    # --- STRICT MATCHES ---
     df_strict = result_strict.to_dataframe().rename(columns={
         "query_id": "id",
         "target_id": "strict_matching_target_id",
         "position": "strict_matching_position"
     })
-    
-    # Join with query to recover query metadata
+
+    # Merge with query metadata
     df_strict = df_query.merge(df_strict, on="id", how="inner")
 
+    # Map internal target_id -> accession
+    df_strict["strict_matching_target_accession"] = (
+        df_strict["strict_matching_target_id"]
+        .map(target_id_to_acc)
+    )
+
     # Add empty wildcard columns
-    df_strict["wildcard_matching_target_id"] = None
+    df_strict["wildcard_matching_target_accession"] = None
     df_strict["wildcard_matching_position"] = None
     df_strict["matching_type"] = "strict"
 
-    # Wildcards match
-    df_wildcard = None # Initialisation required for later merge
+    # --- WILDCARD MATCHES ---
+    df_wildcard = None
     if result_wildcard is not None:
+
         df_wildcard = result_wildcard.to_dataframe().rename(columns={
             "query_id": "id",
             "target_id": "wildcard_matching_target_id",
             "position": "wildcard_matching_position"
         })
 
-        # Join with query to recover query metadata
+        # Merge with query metadata
         df_wildcard = df_query.merge(df_wildcard, on="id", how="inner")
 
+        # Map internal target_id -> accession
+        df_wildcard["wildcard_matching_target_accession"] = (
+            df_wildcard["wildcard_matching_target_id"]
+            .map(target_id_to_acc)
+        )
+
         # Add empty strict columns
-        df_wildcard["strict_matching_target_id"] = None
+        df_wildcard["strict_matching_target_accession"] = None
         df_wildcard["strict_matching_position"] = None
         df_wildcard["matching_type"] = "wildcard"
 
-    # Queries with no match att all
+    # --- NO MATCH QUERIES ---
     matched_ids = set(df_strict["id"].unique())
 
     if df_wildcard is not None:
@@ -98,19 +107,26 @@ def build_matching_result_table(
 
     df_nomatch = base[~base["id"].isin(matched_ids)]
 
-    # Final union
-    result = [df_nomatch, df_strict]
-
-    if result is not None:
-        result.append(df_wildcard)
+    # --- FINAL UNION ---
+    frames = [df_nomatch, df_strict]
+    if df_wildcard is not None:
+        frames.append(df_wildcard)
 
     df_result = (
-        pd.concat(result, ignore_index=True)
+        pd.concat(frames, ignore_index=True)
           .sort_values("id")
           .reset_index(drop=True)
     )
 
+    # --- DROP INTERNAL IDS (clean public output) ---
+    df_result = df_result.drop(columns=[
+        "id",
+        "strict_matching_target_id",
+        "wildcard_matching_target_id",
+    ], errors="ignore")
+
     return df_result
+
 
 
 def compute_rescued_queries(
@@ -316,7 +332,7 @@ def write_outputs(
     stats_file  = Path(output_path, f"microtpct_statistics{f"_{analysis}" if analysis_name else ""}_{ts.strftime("%Y%m%d_%H%M%S")}.{ext}")
     
     # Build matching result into pd.Dataframe
-    df_result = build_matching_result_table(query_db, result_strict, result_wildcard)
+    df_result = build_matching_result_table(query_db, target_db, result_strict, result_wildcard)
 
     # Computes statistics into pd.Dataframe
     df_stats = compute_matching_statistics(

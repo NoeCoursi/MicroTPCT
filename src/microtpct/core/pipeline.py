@@ -237,5 +237,5 @@ run_pipeline(
     analysis_name = "Test of MicroTPCT",
     # log_file="logs/test_pipeline.log",
 
-    wildcards = ["X", "?"]
+    # wildcards = ["X", "?"]
 )
