@@ -228,6 +228,10 @@ class MicroTPCTGUI:
     # --- Run function ---
     def run(self):
         try:
+            # Validate inputs
+            if not self._validate_inputs():
+                return
+            
             # Appel du pipeline
             minimal_pipeline_gui(
                 fasta_path=Path(self.fasta_path.get()),
@@ -240,6 +244,25 @@ class MicroTPCTGUI:
             messagebox.showinfo("Success", "Pipeline completed successfully")
         except Exception as e:
             messagebox.showerror("Error", str(e))
+    
+    def _validate_inputs(self):
+        """Validate all input fields"""
+        if not self.fasta_path.get():
+            messagebox.showerror("Error", "Please select a FASTA file")
+            return False
+        if not Path(self.fasta_path.get()).exists():
+            messagebox.showerror("Error", f"FASTA file not found")
+            return False
+        if not self.xlsx_path.get():
+            messagebox.showerror("Error", "Please select a peptide file")
+            return False
+        if not Path(self.xlsx_path.get()).exists():
+            messagebox.showerror("Error", f"Peptide file not found")
+            return False
+        if not self.output_dir.get():
+            messagebox.showerror("Error", "Please select an output directory")
+            return False
+        return True
 
 def main():
     root = tk.Tk()

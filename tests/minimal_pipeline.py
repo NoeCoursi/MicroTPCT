@@ -1,3 +1,4 @@
+from turtle import pd
 from microtpct.io.validators import validate_peptide_input, validate_protein_input
 from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.converters import *
@@ -79,6 +80,18 @@ def minimal_pipeline_gui(fasta_path, peptide_path, output_path=None, algorithm="
     # Optionally save output
     if output_path:
         out_file = Path(output_path) / "matching_results.xlsx"
-        matching_results.to_excel(out_file)  # adjust this if your object supports .to_excel()
+        
+        # Convert matching_results to DataFrame and save
+        try:
+            # If matching_results has to_dataframe() method
+            if hasattr(matching_results, 'to_dataframe'):
+                df = matching_results.to_dataframe()
+            else:
+                # Convert object to dict
+                df = pd.DataFrame([vars(matching_results)])
+            
+            df.to_excel(out_file, index=False)
+        except Exception as e:
+            print(f"Warning: Could not save to Excel: {e}")
 
     return matching_results
