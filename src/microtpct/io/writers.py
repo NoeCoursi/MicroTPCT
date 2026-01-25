@@ -19,11 +19,15 @@ def _sanitize_name(name: str) -> str:
     return name
 
 def _timestamp():
-    return datetime.now().strftime("%Y%m%d_%H%M%S")
+    return datetime.now()
 
 
 
-def build_matching_result_table(query_db: QueryDB, result_strict: MatchResult, result_wildcard: MatchResult | None = None):
+def build_matching_result_table(
+        query_db: QueryDB,
+        result_strict: MatchResult, 
+        result_wildcard: MatchResult | None = None
+        ) -> pd.DataFrame :
     """
     Build the final matching result table for MicroTPCT.
 
@@ -109,6 +113,179 @@ def build_matching_result_table(query_db: QueryDB, result_strict: MatchResult, r
     return df_result
 
 
+def compute_rescued_queries(
+    strict: MatchResult,
+    wildcard: MatchResult,
+) -> set[str]:
+    """
+    Queries that have no strict match but at least one wildcard match.
+    """
+    strict_queries = set(strict.by_query().keys())
+    wildcard_queries = set(wildcard.by_query().keys())
+
+    return wildcard_queries - strict_queries
+
+
+def compute_matching_statistics(
+    query_db: QueryDB,
+    target_db: TargetDB,
+    result_strict: MatchResult,
+    result_wildcard: MatchResult | None,
+    n_target_with_wildcards: int,
+    matching_engine: str,
+    allow_wildcard: bool,
+    wildcards: set | None,
+    timestamp: datetime,
+    analysis_name: str | None = None,
+) -> pd.DataFrame:
+
+    rows = []
+
+    def add(source: str, metric: str, value):
+        rows.append({
+            "source": source,
+            "metric": metric,
+            "value": value,
+        })
+
+    # =====================
+    # GLOBAL METADATA
+    # =====================
+
+    add("global_metadata", "timestamp", timestamp.isoformat(timespec="seconds"))
+    add("global_metadata", "analysis_name", analysis_name or "unnamed_analysis")
+    add("global_metadata", "matching_engine", matching_engine)
+    add("global_metadata", "allow_wildcard", allow_wildcard)
+    if allow_wildcard:
+        add("global_metadata", "wildcards", ", ".join(sorted(wildcards)) if wildcards else None)
+
+    # =====================
+    # QUERY DB
+    # =====================
+
+    add("query_db", "n_queries", query_db.size)
+    add("query_db", "n_unique_queries", query_db.n_unique_accessions())
+
+    # =====================
+    # TARGET DB
+    # =====================
+
+    add("target_db", "n_targets", target_db.size)
+    if allow_wildcard:
+        add("target_db", "n_targets_with_wildcards", target_db.n_targets_with_wildcards())
+        add("target_db", "fraction_targets_with_wildcards", target_db.fraction_targets_with_wildcards())
+
+    # =====================
+    # MATCHING SUMMARY (global)
+    # =====================
+
+    n_total_matches = result_strict.__len__()
+    if result_wildcard:
+        n_total_matches += result_wildcard.__len__()
+
+    add("matching_summary", "n_total_matches", n_total_matches)
+    add("matching_summary", "n_strict_matches", result_strict.__len__())
+    if allow_wildcard:
+        add("matching_summary", "n_wildcard_matches", result_wildcard.__len__() if result_wildcard else 0)
+
+    # Unique queries with any match
+    strict_queries = set(result_strict.by_query().keys())
+    wildcard_queries = set(result_wildcard.by_query().keys()) if result_wildcard else set()
+    all_matched_queries = strict_queries | wildcard_queries
+
+    add("matching_summary", "n_unique_queries_with_match", len(all_matched_queries))
+    add(
+        "matching_summary",
+        "fraction_unique_queries_with_match",
+        len(all_matched_queries) / query_db.n_unique_accessions() if query_db.n_unique_accessions() else 0.0,
+    )
+
+    # Per-query match distribution (merge strict + wildcard counts)
+    merged_counts = []
+
+    for qid in all_matched_queries:
+        n = result_strict.n_matches_for_query(qid)
+        if result_wildcard:
+            n += result_wildcard.n_matches_for_query(qid)
+        merged_counts.append(n)
+
+    add("matching_summary", "mean_matches_per_unique_query", sum(merged_counts) / len(merged_counts) if merged_counts else 0.0)
+    add("matching_summary", "max_matches_per_unique_query", max(merged_counts) if merged_counts else 0)
+
+    # Targets hit
+    strict_targets = set(result_strict.by_target().keys())
+    wildcard_targets = set(result_wildcard.by_target().keys()) if result_wildcard else set()
+    all_targets_hit = strict_targets | wildcard_targets
+
+    add("matching_summary", "n_targets_hit", len(all_targets_hit))
+
+    # Queries per target
+    merged_target_counts = []
+
+    for tid in all_targets_hit:
+        n = len(result_strict.matches_for_target(tid))
+        if result_wildcard:
+            n += len(result_wildcard.matches_for_target(tid))
+        merged_target_counts.append(n)
+
+    add(
+        "matching_summary",
+        "mean_queries_per_target_with_match",
+        sum(merged_target_counts) / len(merged_target_counts) if merged_target_counts else 0.0,
+    )
+    add(
+        "matching_summary",
+        "max_queries_per_target_with_match",
+        max(merged_target_counts) if merged_target_counts else 0,
+    )
+
+    # =====================
+    # STRICT MATCHING
+    # =====================
+
+    add("strict_matching", "n_unique_queries_with_strict_match", len(result_strict.by_query()))
+    add(
+        "strict_matching",
+        "fraction_unique_queries_with_strict_match",
+        len(result_strict.by_query()) / query_db.n_unique_accessions() if query_db.n_unique_accessions() else 0.0,
+    )
+    add("strict_matching", "mean_strict_matches_per_unique_query", result_strict.mean_matches_per_unique_query())
+    add("strict_matching", "max_strict_matches_per_unique_query", result_strict.max_matches_per_unique_query())
+
+    # =====================
+    # WILDCARD MATCHING
+    # =====================
+
+    if result_wildcard:
+
+        add("wildcard_matching", "n_unique_queries_with_wildcard_match", len(result_wildcard.by_query()))
+        add(
+            "wildcard_matching",
+            "fraction_unique_queries_with_wildcard_match",
+            len(result_wildcard.by_query()) / query_db.n_unique_accessions() if query_db.n_unique_accessions() else 0.0,
+        )
+        add("wildcard_matching", "mean_wildcard_matches_per_unique_query", result_wildcard.mean_matches_per_unique_query())
+        add("wildcard_matching", "max_wildcard_matches_per_unique_query", result_wildcard.max_matches_per_unique_query())
+
+        # Rescued queries
+        rescued = compute_rescued_queries(result_strict, result_wildcard)
+
+        add("wildcard_matching", "n_queries_rescued_by_wildcard", len(rescued))
+        add(
+            "wildcard_matching",
+            "fraction_queries_rescued_by_wildcard",
+            len(rescued) / query_db.size if query_db.size else 0.0,
+        )
+        add(
+            "wildcard_matching",
+            "fraction_unique_queries_rescued_by_wildcard",
+            len(rescued) / query_db.n_unique_accessions() if query_db.n_unique_accessions() else 0.0,
+        )
+
+    return pd.DataFrame(rows)
+
+
+
 
 def write_outputs(
     output_path: PathLike,
@@ -116,7 +293,11 @@ def write_outputs(
     query_db: QueryDB,
     target_db: TargetDB,
     result_strict: MatchResult,
-    result_wildcard: MatchResult | None = None,
+    result_wildcard: MatchResult | None,
+    n_target_with_wildcards: int,
+    matching_engine: str,
+    allow_wildcard: bool,
+    wildcards: set | None,
     analysis_name: str | None = None,
 ):
     
@@ -131,122 +312,39 @@ def write_outputs(
 
     ext = "csv" if output_format == "csv" else "xlsx"
 
-    result_file = Path(output_path, f"microtpct_matching_result{f"_{analysis}" if analysis_name else ""}_{ts}.{ext}")
-    stats_file  = Path(output_path, f"microtpct_statistics{f"_{analysis}" if analysis_name else ""}_{ts}.{ext}")
+    result_file = Path(output_path, f"microtpct_matching_result{f"_{analysis}" if analysis_name else ""}_{ts.strftime("%Y%m%d_%H%M%S")}.{ext}")
+    stats_file  = Path(output_path, f"microtpct_statistics{f"_{analysis}" if analysis_name else ""}_{ts.strftime("%Y%m%d_%H%M%S")}.{ext}")
     
+    # Build matching result into pd.Dataframe
     df_result = build_matching_result_table(query_db, result_strict, result_wildcard)
+
+    # Computes statistics into pd.Dataframe
+    df_stats = compute_matching_statistics(
+        query_db,
+        target_db,
+        result_strict,
+        result_wildcard,
+        n_target_with_wildcards,
+        matching_engine,
+        allow_wildcard,
+        wildcards,
+        ts,
+        analysis_name,
+    )
+
 
     if output_format == "csv":
         df_result.to_csv(result_file, index=False)
+        df_stats.to_csv(stats_file, index=False)
 
     elif output_format == "excel":
         with pd.ExcelWriter(result_file, engine="xlsxwriter") as writer:
             df_result.to_excel(writer, index=False, sheet_name="results")
+        
+        with pd.ExcelWriter(stats_file, engine="xlsxwriter") as writer:
+            df_stats.to_excel(writer, index=False, sheet_name="statistics")
 
     return result_file, stats_file
-
-
-
-
-
-def write_outputs_to_csv(algorithm_output, algorithm_output_X , algorithm_input, file_path=None, output_file="microTPCT.csv", output_metrics="metrics.csv"):
-
-                                                # Compute Metrics 
-    # Need to compute metrics first before converting algorithm output to dataframe instead of object from class MatchResult
-
-    # Indexing helpers defined in class MatchResult used here: 
-    # by_query(self) Group matches by query (peptide) ID
-    # by_target(self) Group matches by target (protein) ID
-    
-    # Analysis helpers defined in class MatchResult used here:
-    # matches_for_query
-    # n_matches_for_query
-    # peptides_with_no_match
-    # n_unique_queries
-    # n_unique_targets
-    
-    # Compute metrics with the above helpers
-    total_peptides = algorithm_input.size
-    matched_peptides = algorithm_output.n_unique_queries()
-    unmatched_peptides = len(algorithm_output.peptides_with_no_match(algorithm_input.ids))
-    unique_proteins_matched = algorithm_output.n_unique_targets()
-    avg_proteins_per_peptide = ((total_peptides - unmatched_peptides) / matched_peptides) if matched_peptides > 0 else 0
-
-
-                                        # Create micropeptides CSV file            
-
-    # algorithm_output contains query_id = peptide_ID, target_id = protein_ID, position = start_position     
-    # Convert output to dataframe
-    algorithm_output = algorithm_output.to_dataframe()
-    # Algorithm output for protein sequence containing X
-    algorithm_output_X = algorithm_output_X.to_dataframe()
-    # Rename column of protein's ID for it to be different than result without Xs
-    algorithm_output_X.columns = ['query_id', 'target_id_X', 'position']
-
-    # It's still missing peptide_seq and J_peptide_seq, so we fetch those in input files QueryDB
-    # QueryDB contains : id = peptide_ID, sequence= peptide_seq, ambiguous_il_sequence = J_peptide_seq 
-    algorithm_input= algorithm_input.to_dataframe()[['id', 'sequence', 'ambiguous_il_sequence']]
-
-    # Merge all dataframes on peptide_ID
-    algorithms = pd.merge(algorithm_output,algorithm_output_X,
-                      on=['query_id','position'], how="outer",
-                      suffixes=('', '_X'))
-    # merge with input 
-    output_data = pd.merge(algorithm_input,algorithms, 
-                       left_on='id', right_on='query_id', 
-                       how="outer")
-    output_data= output_data[['id', 'target_id', 'target_id_X', 'position', 'sequence', 'ambiguous_il_sequence']]
-    output_data.columns = ['peptide_ID', 'protein_ID', 'protein_ID_X', 'start_position', 'peptide_seq', 'J_peptide_seq']
-
-
-
-    # If no file_path is given, use current directory
-    if not file_path:
-        file_path = Path.cwd()
-        print(f"No file_path provided, saving file in current directory: {file_path}")
-
-    # Get the directory of the files used as input 
-    file_dir = Path(file_path).resolve().parent
-
-    # Check if outputs folder exists, if not creates it 
-    output_dir = file_dir / "outputs"
-    if output_dir.exists():
-        print("outputs folder already exists")
-    else:
-        output_dir.mkdir(parents=True)
-        print("creating outputs folder")
-
-    # Format: month_day_hour:minute_name-of-file
-    month_day_hour_minute = datetime.now().strftime("%m_%d_%Hh%M")
-    # creates output path for file 
-    file_name=month_day_hour_minute+"_"+output_file
-    output_path = output_dir/file_name 
-
-    # write the micropeptides to a CSV file "microTPCT.csv"
-    (output_data).to_csv(output_path, index=False)
-    
-
-
-
-
-    # Create a DataFrame to hold the metrics
-    metrics_df = pd.DataFrame({
-        'Total_Peptides': [total_peptides],
-        'Matched_Peptides': [matched_peptides],
-        'Unmatched_Peptides': [unmatched_peptides],
-        'Unique_Proteins_Matched': [unique_proteins_matched],
-        'Avg_Proteins_Per_Peptide': [avg_proteins_per_peptide]
-    })
-
-    # Creates output path for file 
-    metrics_name=month_day_hour_minute+"_"+output_metrics
-    metrics_path = output_dir/metrics_name
-
-    # Write metrics to CSV
-    metrics_df.to_csv(metrics_path, index=False)
-
-
-    return None
 
 
 

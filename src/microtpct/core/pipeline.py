@@ -168,7 +168,7 @@ def run_pipeline(
     total_n_matches = result_strict_matching.__len__() # Store number of matches
 
     # Wildcard matching
-    if effective_allow_wildcard:
+    if effective_allow_wildcard and n_with_wildcards > 0:
         result_wildcard_matching = run_wildcard_match(target_db.get_wildcard_targets(), # Only sequence that contain wildcards
                                                        query_db,
                                                        wildcards)
@@ -191,12 +191,18 @@ def run_pipeline(
         target_db = target_db,
         result_strict = result_strict_matching,
         result_wildcard = result_wildcard_matching if effective_allow_wildcard else None,
+        n_target_with_wildcards = n_with_wildcards,
+        matching_engine = matching_engine,
+        allow_wildcard = effective_allow_wildcard,
+        wildcards = wildcards if wildcards else None,
     )
     
     logger.info(f"Results written to: {result_file}")
+    logger.info(f"Statistics written to: {stats_file}")
 
     # Done
     logger.info("Pipeline finished successfully")
+
 
 
 def _inject_wildcard_metadata(target_db, target_inputs):
@@ -228,8 +234,8 @@ run_pipeline(
     query_file = r"c:\Users\huawei\Desktop\Drosophila Microproteome Openprot 2025-10-09 all conditions_2025-11-24_1613.xlsx",
     allow_wildcard = True,
     matching_engine = "find",
-    # analysis_name = "Test of MicroTPCT",
+    analysis_name = "Test of MicroTPCT",
     # log_file="logs/test_pipeline.log",
 
-    wildcards = "X"
+    wildcards = ["X", "?"]
 )
