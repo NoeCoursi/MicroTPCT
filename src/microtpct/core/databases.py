@@ -62,6 +62,35 @@ class SequenceDB:
         })
 
 
+class TargetDB(SequenceDB):
+    """
+    Target protein database.
+
+    Contains protein sequences used as matching targets.
+    """
+
+    def n_targets_with_wildcards(self) -> int:
+        if not hasattr(self, "contains_wildcards"):
+            return 0
+        return sum(self.contains_wildcards)
+
+    def fraction_targets_with_wildcards(self) -> float:
+        if self.size == 0:
+            return 0.0
+        return self.n_targets_with_wildcards() / self.size
+
+    # Modify to_dataframe methode in order to incorporate eventual contain_windcards attribute in output
+    def to_dataframe(self):
+        # Start with parent DataFrame
+        df = super().to_dataframe()
+
+        # Inject contain_wildcard if it exists
+        if hasattr(self, "contains_wildcards"):
+            df["contain_wildcard"] = self.contains_wildcards
+
+        return df
+
+
 class QueryDB(SequenceDB):
     """
     Query peptide database.

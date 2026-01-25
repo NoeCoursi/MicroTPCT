@@ -110,7 +110,7 @@ def parse_blast_output(blast_out: str) -> List[Match]:
 
 
 # Use local BLAST+ (makeblastdb + blastp) to find exact peptide matches in proteins.
-def run_blast(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
+def run_blast_basic(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
     """Run local BLAST (makeblastdb + blastp) using `target_db` and `query_db`.
 
     The function writes temporary FASTA files for targets and queries, builds

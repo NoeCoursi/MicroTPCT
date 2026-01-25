@@ -6,8 +6,9 @@ peptide-to-protein matching results produced by the matching engines.
 """
 
 from dataclasses import dataclass
+import pandas as pd
 from typing import Dict, List, Iterable, Set
-
+from statistics import mean
 
 # Match object
 @dataclass(frozen=True)
@@ -59,6 +60,20 @@ class MatchResult:
     def __len__(self) -> int:
         """Total number of matches."""
         return len(self._matches)
+
+
+    # Help to extract results at the end 
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """
+        Return the matching results as a pandas DataFrame.
+        One row per peptide-to-protein match.
+        """
+        return pd.DataFrame({
+            "query_id": [m.query_id for m in self._matches],
+            "target_id": [m.target_id for m in self._matches],
+            "position": [m.position for m in self._matches]
+            })
 
 
     # Indexing helpers
@@ -140,11 +155,29 @@ class MatchResult:
         matched = set(self.by_query().keys())
         return [qid for qid in all_query_ids if qid not in matched]
 
-    # Global statistics
-    def n_unique_queries(self) -> int:
-        """Number of peptides that matched at least one protein."""
-        return len(self.by_query())
+    # ---- Per-query statistics (unique queries only) ----
 
-    def n_unique_targets(self) -> int:
-        """Number of proteins hit by at least one peptide."""
-        return len(self.by_target())
+    def matches_per_unique_query(self) -> list[int]:
+        return [len(ms) for ms in self.by_query().values()]
+
+    def mean_matches_per_unique_query(self) -> float:
+        values = self.matches_per_unique_query()
+        return mean(values) if values else 0.0
+
+    def max_matches_per_unique_query(self) -> int:
+        values = self.matches_per_unique_query()
+        return max(values) if values else 0
+
+    # ---- Per-target statistics ----
+
+    def queries_per_target(self) -> list[int]:
+        return [len(ms) for ms in self.by_target().values()]
+
+    def mean_queries_per_target(self) -> float:
+        values = self.queries_per_target()
+        return mean(values) if values else 0.0
+
+    def max_queries_per_target(self) -> int:
+        values = self.queries_per_target()
+        return max(values) if values else 0
+    
