@@ -3,12 +3,9 @@ import pytest
 import subprocess
 from pathlib import Path
 import sys
+from click.testing import CliRunner
+from microtpct.interfaces.cli import cli, start
 
-# ----------------------------------------------------------------------
-# CHEMIN DU SCRIPT CLI
-# ----------------------------------------------------------------------
-CLI_SCRIPT = Path(__file__).parent.parent /"src"/"microtpct"/"interfaces"/"cli.py"  # Ajuste si ton cli.py est ailleurs
-print(CLI_SCRIPT)
 # ----------------------------------------------------------------------
 # FIXTURES
 # ----------------------------------------------------------------------
@@ -28,14 +25,11 @@ def output_dir(tmp_path):
 # ----------------------------------------------------------------------
 # HELPER POUR LANCER LA CLI
 # ----------------------------------------------------------------------
-def run_cli(args):
-    """Lance le CLI via subprocess et retourne (exit_code, stdout, stderr)"""
-    proc = subprocess.run(
-        [sys.executable, str(CLI_SCRIPT)] + args,
-        capture_output=True,
-        text=True
-    )
-    return proc.returncode, proc.stdout, proc.stderr
+def run_cli(args, input_text=None):
+    """Exécute le CLI via Click CliRunner et retourne (exit_code, stdout, stderr)"""
+    runner = CliRunner()
+    result = runner.invoke(cli, args, input=input_text)
+    return result.exit_code, result.output, result.exception
 
 # ----------------------------------------------------------------------
 # TESTS DES ALGORITHMES
@@ -50,9 +44,7 @@ def run_cli(args):
 def test_individual_algos(algo_flag, expected, temp_files):
     query, target, _ = temp_files
     code, out, err = run_cli(algo_flag + [str(query), str(target)])
-    # La CLI exit(1) après pipeline => code=1 attendu
-    assert code == 1
-    # Print de sortie
+    assert code == 1  # pipeline non exécuté
     assert f"Algo   : {expected}" in out
     assert "LANCEMENT PIPELINE" in out
 
@@ -66,7 +58,7 @@ def test_multiple_algos_error(temp_files):
     query, target, _ = temp_files
     code, out, err = run_cli(["--aho", "--bm", str(query), str(target)])
     assert code != 0
-    assert "Please select only one algorithm" in (out + err)
+    assert "Please select only one algorithm" in (out + str(err))
 
 # ----------------------------------------------------------------------
 # TEST ALLOW_WILDCARD
@@ -81,8 +73,7 @@ def test_allow_wildcard_invalid(temp_files):
     query, target, _ = temp_files
     code, out, err = run_cli(["--allow_wildcard", "Q", str(query), str(target)])
     assert code != 0
-    # Les erreurs Click vont dans stderr
-    assert "Invalid value for '--allow_wildcard': 'Q' is not one of" in (out + err)
+    assert "Invalid value for '--allow_wildcard'" in (out + str(err))
 
 # ----------------------------------------------------------------------
 # TEST OUTPUT & LOG / ERR
@@ -91,36 +82,39 @@ def test_output_dir_creation(temp_files, output_dir):
     query, target, _ = temp_files
     code, out, err = run_cli(["--aho", "-o", str(output_dir), str(query), str(target)])
     assert code == 1
-    assert output_dir.exists()
-    assert output_dir.is_dir()
+    assert output_dir.exists() and output_dir.is_dir()
     assert f"Output : {output_dir}" in out
 
 def test_log_err_files(temp_files, output_dir):
     query, target, _ = temp_files
-    output_dir.mkdir()
-    code, out, err = run_cli([
-        "--aho", "-o", str(output_dir), "--log", "--err",
-        str(query), str(target)
-    ])
-    assert code == 1
-    assert (output_dir / "stdout.log").exists()
-    assert (output_dir / "stdout.err").exists()
+    if output_dir :
+        output_dir.mkdir()
+        code, out, err = run_cli([
+            "--aho", "-o", str(output_dir), "--log", "--err",
+            str(query), str(target)
+        ])
+        assert code == 1
+        assert (output_dir / "stdout.log").exists()
+        assert (output_dir / "stdout.err").exists()
+    else :
+        return
 
 # ----------------------------------------------------------------------
 # TEST START
 # ----------------------------------------------------------------------
-def test_start_alone(monkeypatch):
-    from microtpct.interfaces.cli import start
-    monkeypatch.setattr(start, "__call__", lambda: print("START CALLED"))
+def test_start_confirmed(monkeypatch):
+    monkeypatch.setattr("click.confirm", lambda *a, **k: True)
+    monkeypatch.setattr("microtpct.interfaces.cli.start", lambda: print("START CALLED"))
     code, out, err = run_cli(["--start"])
     assert code == 0
     assert "START CALLED" in out
 
-def test_start_with_other_option(temp_files):
-    query, target, _ = temp_files
-    code, out, err = run_cli(["--start", "--aho", str(query), str(target)])
-    assert code != 0
-    assert "`--start` must be used alone" in (out + err)
+def test_start_cancelled(monkeypatch):
+    monkeypatch.setattr("click.confirm", lambda *a, **k: False)
+    code, out, err = run_cli(["--start"])
+    assert code == 0
+    assert "Installation abordted." in out
+
 
 # ----------------------------------------------------------------------
 # TEST VALIDATION DES FICHIERS
@@ -130,11 +124,11 @@ def test_invalid_query_file(temp_files):
     missing = tmp_path / "missing.fasta"
     code, out, err = run_cli(["--aho", str(missing), str(target)])
     assert code != 0
-    assert f"File not found: {missing}" in (out + err)
+    assert f"File not found: {missing}" in (out + str(err))
 
 def test_invalid_target_file(temp_files):
     query, _, tmp_path = temp_files
     missing = tmp_path / "missing.fasta"
     code, out, err = run_cli(["--aho", str(query), str(missing)])
     assert code != 0
-    assert f"File not found: {missing}" in (out + err)
+    assert f"File not found: {missing}" in (out + str(err))

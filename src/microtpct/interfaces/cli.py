@@ -35,31 +35,34 @@ def validate_input_file(ctx, param, value):
         raise click.BadParameter(f"Not a file: {value}")
     return path.resolve()
 
-def check_dependencies(ctx, start) :
-    if start and ctx.args:
-        echo_error("`--start` must be used alone. Use: microTPCT --start")
-        ctx.exit(1)
-
-    if start:
-        start()
+# Start option managment
+def start_callback(ctx, param, value):
+    if not value:  # <-- Ignore si --start n'est pas présent
         return
-    
-def check_start_exclusive(opts):
-    if opts.get("start"):
-        # Liste des options à tester (flags mutuellement exclusifs avec start)
-        other_flags = ["aho", "bm", "ag", "blast", "regex", "allow_wildcard", "output", "log", "err"]
-        for key in other_flags:
-            value = opts.get(key)
-            # Pour les bools et tuples/lists, check if set / non-empty
-            if isinstance(value, bool) and value:
-                return False
-            if isinstance(value, (tuple, list)) and len(value) > 0:
-                return False
-            if value not in (None, False, (), []):
-                return False
-        return True
-    return None
+    click.echo(
+        click.style(
+            "Warning:\n"
+            "option --start is used to install dependencies.\n"
+            "No other action will be computed and options and inpu files will be ignored\n"
+            "Use option -h o --help for more informations",
+            fg="yellow",
+            bold=True,
+        )
+    )
 
+    if not click.confirm("\nContinue ?", default=True):
+        click.echo("Installation aborted.")
+        ctx.exit(0)
+
+    start()
+    ctx.exit(0)
+
+
+
+
+# ----------------------------
+# Algo and wildcard mangament 
+# ----------------------------
 def validate_algo(ctx, aho, bm, ag, blast, regex):
     algo_flags = [("aho", aho), ("bm", bm), ("ag", ag), ("blast", blast), ("regex", regex)]
     selected = [name for name, active in algo_flags if active]
@@ -99,40 +102,44 @@ def validate_wildcards(ctx, allow_wildcard):
     help="Allows wildcards processing (choose from [B,X,Z,J,U,O,-,.,?])")
 
 # General options
-
-@click.option("--start", is_flag=True, help="Install dependencies and exit")
+@click.option(
+    "--start",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=start_callback,
+    help="Install dependencies and exit",
+)
+    
 #TODO : link to docs / USAGE.txt path 
 #@click.option("-h","--help", is_flag=True, help="Install dependencies and exit")
 @click.option("-o", "--output",
               type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
               help="Output directory")
 
-@click.option("--log",type=click.Path(dir_okay=False, writable=True),help="Write all stdout to FILE",)
-@click.option("--err",type=click.Path(dir_okay=False, writable=True),help="Write all error to FILE",)
+@click.option("--log",is_flag=True,help="Write all stdout to FILE",)
+@click.option("--err",is_flag=True,help="Write all error to FILE",)
+@click.option("--usage",is_flag=True,help="Write all error to FILE",)
 
 @click.argument("query_input", callback=validate_input_file)
 @click.argument("target_input", callback=validate_input_file)
 @click.version_option(version="1.0.0", prog_name="microTPCT")
 @click.pass_context
-def cli(ctx, aho, bm, ag, blast, regex, allow_wildcard, start, output, log, err, query_input, target_input):
+def cli(ctx, aho, bm, ag, blast, regex, allow_wildcard, output, log, err, usage, query_input, target_input):
     """
     CLI entry point for microTPCT
     """
     ctx.ensure_object(dict)
     
-    # Install dependencies if option --start is TRUE
-    #check_dependencies(ctx, start)
-
-    # Check if option --start is alone
-    is_startexclusive = check_start_exclusive(dict(ctx.params))
-    
-    if is_startexclusive is True:
-        print("Executing --start command")
-        start()
-        ctx.exit(0)  # ou exit(0) si pas de ctx
-    elif is_startexclusive is False:
-        print("--start must be used alone")
-        ctx.exit(1)
+    # print USAGE.txt as helper
+    if usage:
+        usage_file = Path(__file__).resolve().parent.parent.parent.parent / "docs" / "USAGE.txt"
+        print(usage_file)
+        if usage_file.exists():
+            click.echo(usage_file.read_text())
+        else:
+            click.echo("USAGE.txt not found!")
+        ctx.exit(0)
 
     # Determine algorithm
     matching_engine = validate_algo(ctx, aho, bm, ag, blast, regex)

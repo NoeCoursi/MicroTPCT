@@ -1,22 +1,17 @@
-MicroTPCT — Microprotein Target Prediction and Comparison Toolkit
 
 
 		==============================================
-
 		           ████████╗██████╗  ██████╗████████╗
 		 ██╗   ██╗ ╚══██╔══╝██╔══██╗██╔════╝╚══██╔══╝
 		 ██║   ██║    ██║   ██████╔╝██║        ██║   
 		 ██║   ██║    ██║   ██╔═══╝ ██║        ██║   
-		 ██║   ██║    ██║   ██║     ╚██████╗   ██║   
 		 ███████╔╝    ╚═╝   ╚═╝      ╚═════╝   ╚═╝   
 		 █╚═════╝
 		 █
-
 		==============================================
 
-
 Usage:
-  microtpct <command> [options] QUERY_input TARGET_input
+  microTPCT [options] QUERY_input TARGET_input
 
 Description:
   MicroTPCT is a bioinformatics toolkit designed to identify and evaluate
@@ -24,25 +19,23 @@ Description:
   against canonical proteomes using multiple matching strategies. This
   software enables to process wildcards in the target file using option -r
 
-Commands:
+Options:
 
-  aho   (default)    Perform Aho–Corasick based peptide matching
-  bm		         Perform Boyer-Moore based peptide matching
-  ag                 Perform [AWk - GREP] based peptide matching
-  blast              Perform local BLAST-based peptide matching
-  regex              Perform regex-based based peptide matching
-  				       ->  not recommended as the primary algorithm
-  				           better used as option
-  start				 Setup the sowtware in your machine
+  --aho   (default)    Perform Aho–Corasick based peptide matching
+  --bm		             Perform Boyer-Moore based peptide matching
+  --ag                 Perform [AWk - GREP] based peptide matching
+  --blast              Perform local BLAST-based peptide matching
+  --regex              Perform regex-based based peptide matching
+  				                ->  not recommended as the primary algorithm
+  				                better used as option
 
 General options:
-
+  --start				       Setup the software in your machine, install dependencies
   -h, --help        Show this help message and exit
-  -v, --version     Show program version and exit
+  --version     Show program version and exit
   --log FILE        Write logs to FILE
   --error FILE      Write errors to FILE
-  --mode [mode]		dev or prod
-
+  
   -r 				Complementary regex search only undetermined 
   					amino-acids from target file
 
