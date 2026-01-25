@@ -1,4 +1,4 @@
-
+Microproteotypicity of Peptides – Computational Toolkit
 
 		==============================================
 		           ████████╗██████╗  ██████╗████████╗
@@ -17,7 +17,7 @@ Description:
   MicroTPCT is a bioinformatics toolkit designed to identify and evaluate
   candidate microproteins by matching peptides from alternative proteomes
   against canonical proteomes using multiple matching strategies. This
-  software enables to process wildcards in the target file using option -r
+  software enables to process wildcards in the target file using option --allow_wildcard
 
 Options:
 
@@ -26,19 +26,20 @@ Options:
   --ag                 Perform [AWk - GREP] based peptide matching
   --blast              Perform local BLAST-based peptide matching
   --regex              Perform regex-based based peptide matching
-  				                ->  not recommended as the primary algorithm
-  				                better used as option
+  				              ->  not recommended as the primary algorithm
+  				                  better used as option
 
+  --allow_wildcard 		 Complementary regex search only undetermined 
+  					           amino-acids from target file
 General options:
-  --start				       Setup the software in your machine, install dependencies
-  -h, --help        Show this help message and exit
-  --version     Show program version and exit
-  --log FILE        Write logs to FILE
-  --error FILE      Write errors to FILE
-  
-  -r 				Complementary regex search only undetermined 
-  					amino-acids from target file
 
-  -o output_file 	Defines ouput file path. If not provided,
-  					an output folder will be created in the parent 
-  					directory of the current working directory.
+  --start				       Setup the software in your machine, install dependencies
+  --help               Show small usage info
+  --version            Show program version and exit
+  --log                Write logs to FILE in RESULTS_FOLDER
+  --error              Write errors to FILE in RESULTS_FOLDER
+  --usage              Shows detailed usage
+  -o, --output OUTPUT_PATH/<NEW_FOLDER_NAME> 	
+                       Defines ouput file path. If not provided,
+                       an output folder will be created in the parent 
+  					           directory of the current working directory.
