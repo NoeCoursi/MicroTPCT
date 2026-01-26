@@ -7,8 +7,10 @@ This module orchestrates the full workflow:
 This pipeline is interface-agnostic.
 """
 
+from asyncio.log import logger
 from pathlib import Path
 from typing import List, Literal
+from venv import logger
 
 from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.validators import validate_protein_input, validate_peptide_input, validates_wildcards
@@ -56,7 +58,10 @@ def run_pipeline(
 
     logger = setup_logger(__name__, log_file=log_file)
 
-    logger.info(f"Starting MicroTPCT pipeline {f"for analysis: {analysis_name}" if analysis_name else ""}")
+    logger.info(
+    f"Starting MicroTPCT pipeline"
+    f"{' for analysis: ' + analysis_name if analysis_name else ''}"
+)
 
     # Read inputs
     logger.info(f"Reading target file: {target_file}")
@@ -162,7 +167,9 @@ def run_pipeline(
         raise ValueError(f"Unsupported matching engine: '{matching_engine}'")
 
     # Execute the engine
-    logger.info(f"Running matching engine: {matching_engine} {"+ wildcards match" if effective_allow_wildcard else ""}")
+    suffix = " + wildcard match" if effective_allow_wildcard else ""
+    logger.info(f"Running matching engine: {matching_engine}{suffix}")
+    
     result_strict_matching = matching_func(target_db, query_db)
 
     total_n_matches = result_strict_matching.__len__() # Store number of matches
