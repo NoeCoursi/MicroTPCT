@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
 """
 CLI launcher for the project microTPCT
-Author: Meredith, Ambre, Ambroise, Noe, Basile
+Author: Basile Bergeron, Meredith Biteau, Ambre Bordas, Noé Cursimaux, Ambroise Loeb
 """
 
 import click,  subprocess, sys #type: ignore
 
+from typing import List, Tuple, Literal, Dict
 from pathlib import Path
 from contextlib import redirect_stdout, redirect_stderr, ExitStack
 from yaspin import yaspin #type: ignore
 from yaspin.spinners import Spinners #type: ignore
 
 
-
 # Message helpers
-def echo_info(msg):
+def echo_info(msg: str):
     click.echo(f"[INFO] {msg}")
 
-def echo_error(msg):
+def echo_error(msg: str):
     click.echo(f"[ERROR] {msg}", err=True)
-
 
 # Core Pipeline class
 class PipelineRunner:
@@ -38,10 +37,9 @@ class PipelineRunner:
         # Create output directory if it doesn't exist
         self.output_path.mkdir(parents=True, exist_ok=True)
 
-
     # Validation
     @staticmethod
-    def validate_input_file(file_path):
+    def validate_input_file(file_path: str | Path) -> str | Path:
         path = Path(file_path)
         if not path.exists():
             raise click.BadParameter(f"File not found: {file_path}")
@@ -50,12 +48,13 @@ class PipelineRunner:
         return path.resolve()
 
     @staticmethod
-    def validate_algo_flags(algo_flags):
+    def validate_algo_flags(algo_flags: List[Tuple[str, bool]]) -> str:
         selected = [name for name, active in algo_flags if active]
         if len(selected) > 1:
             raise click.UsageError("Please select only one algorithm")
         return selected[0] if selected else "aho"
 
+    
     # ----------------------------
     # Pipeline execution
     # ----------------------------
@@ -83,12 +82,13 @@ class PipelineRunner:
             # TODO replace with actual call
             print(self.algo, self.wildcards, self.output_path,
                   self.query_input, self.target_input)
+
             exit(1)
 
 
     # Start (install dependencies)
     @staticmethod
-    def start():
+    def start(requirements_file: Path | None = None):
         requirements_file = Path(__file__).resolve().parent.parent.parent.parent / "requirements.txt"
         print("Installing dependencies from:", requirements_file)
         with yaspin(Spinners.dots, text="Installing dependencies...") as spinner:
@@ -103,12 +103,14 @@ class PipelineRunner:
                 echo_error(f"Failed to install dependencies: {e}")
                 sys.exit(1)
 
+# called start_callback and usage_callback called before cli
+# if --start or --usage are parsed
 
-# ----------------------------
-# Click callbacks
-# ----------------------------
-def start_callback(ctx, param, value):
-    """Executed if --start is used"""
+def start_callback(ctx: click.Context, param: click.Parameter, value):
+    """
+    Executed start() if --start is used to install dependencies
+    No pipeline is launched
+    """
     if not value:
         return
     click.echo(
@@ -128,10 +130,24 @@ def start_callback(ctx, param, value):
     PipelineRunner.start()
     ctx.exit(0)
 
+def usage_callback(ctx: click.Context, param: click.Parameter, value):
+    """
+    Print docs/USAGE.txt if --usage is used
+    No pipeline is launched
+    """
+    if not value:
+        return
 
-# ----------------------------
+    usage_file = Path(__file__).resolve().parent.parent.parent.parent / "docs" / "USAGE.txt"
+    if usage_file.exists():
+        click.echo(usage_file.read_text())
+    else:
+        click.echo("USAGE.txt not found!")
+    ctx.exit(0)
+
+
+
 # Main CLI
-# ----------------------------
 @click.command(
     context_settings=dict(ignore_unknown_options=False, allow_extra_args=True)
 )
@@ -141,18 +157,17 @@ def start_callback(ctx, param, value):
 @click.option("--ag", is_flag=True, help="Use AWK-GREP algorithm")
 @click.option("--blast", is_flag=True, help="Use BLAST algorithm")
 @click.option("--regex", is_flag=True, help="Use regex-based matching (not recommended)")
+@click.option("--find", is_flag=True, help="Use native python .find() matching")
 
 # Wildcards
-@click.option(
-    "--allow_wildcard",
+@click.option("--allow_wildcard",
     multiple=True,
     type=click.Choice(PipelineRunner.WILDCARD_CHOICES, case_sensitive=True),
     help="Allows wildcards processing (choose from [B,X,Z,J,U,O,-,.,?])"
 )
 
 # General options
-@click.option(
-    "--start",
+@click.option("--start",
     is_flag=True,
     is_eager=True,
     expose_value=False,
@@ -164,35 +179,46 @@ def start_callback(ctx, param, value):
               help="Output directory")
 @click.option("--log", is_flag=True, help="Write all stdout to FILE")
 @click.option("--err", is_flag=True, help="Write all error to FILE")
-@click.option("--usage", is_flag=True, help="Display USAGE.txt")
+@click.option("--usage",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=usage_callback,
+    help="Install dependencies and exit",
+)
 
 # Arguments
-@click.argument("query_input", callback=lambda ctx, param, val: PipelineRunner.validate_input_file(val))
-@click.argument("target_input", callback=lambda ctx, param, val: PipelineRunner.validate_input_file(val))
+@click.argument("query_input",
+    callback=lambda ctx, param,
+    val: PipelineRunner.validate_input_file(val))
+@click.argument("target_input",callback=lambda ctx, param, val: PipelineRunner.validate_input_file(val))
 @click.version_option(version="1.0.0", prog_name="microTPCT")
 @click.pass_context
-def cli(ctx, aho, bm, ag, blast, regex, allow_wildcard,
-        output, log, err, usage, query_input, target_input):
+def cli(
+    ctx: click.Context,
+    aho: bool,
+    bm: bool,
+    ag: bool,
+    blast: bool,
+    regex: bool,
+    find: bool,
+    allow_wildcard: Tuple[str, ...],
+    output: str | Path,
+    log: bool,
+    err: bool,
+    query_input: str | Path,
+    target_input: str | Path,
+) -> None:
+    
     """
     CLI entry point for microTPCT
     """
     ctx.ensure_object(dict)
 
     # ----------------------------
-    # Print USAGE.txt if requested
-    # ----------------------------
-    if usage:
-        usage_file = Path(__file__).resolve().parent.parent.parent.parent / "docs" / "USAGE.txt"
-        if usage_file.exists():
-            click.echo(usage_file.read_text())
-        else:
-            click.echo("USAGE.txt not found!")
-        ctx.exit(0)
-
-    # ----------------------------
     # Determine algorithm
     # ----------------------------
-    algo_flags = [("aho", aho), ("bm", bm), ("ag", ag), ("blast", blast), ("regex", regex)]
+    algo_flags = [("aho", aho), ("bm", bm), ("ag", ag), ("blast", blast), ("regex", regex), ("find", find)]
     algo = PipelineRunner.validate_algo_flags(algo_flags)
 
     # ----------------------------
@@ -210,8 +236,7 @@ def cli(ctx, aho, bm, ag, blast, regex, allow_wildcard,
     runner.run_pipeline()
 
 
-# ----------------------------
+
 # Entry point
-# ----------------------------
 if __name__ == "__main__":
     cli(prog_name="microTPCT")
