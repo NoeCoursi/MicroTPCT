@@ -41,10 +41,23 @@ TEXT_COLOR = "#2C3E50"
 LIGHT_TEXT = "#FFFFFF"
 
 class MicroTPCTGUI:
+    """Main GUI class for the MicroTPCT peptide analysis pipeline."""
+    
     def __init__(self, root):
+        """
+        Initialize the MicroTPCT GUI application.
+        
+        Args:
+            root (tk.Tk): The root tkinter window object.
+        
+        Creates the main window layout with 4 columns:
+        - Column 0: Input Files (FASTA, peptide, output directory)
+        - Column 1: Configuration (algorithm, wildcard settings) & Save Options (format, filename, timestamp)
+        - Column 2: Actions (run, save, clear, exit buttons)
+        """
         self.root = root
         self.root.title("MicroTPCT")
-        self.root.geometry("1400x700")
+        #self.root.geometry("1000x600")
         self.root.configure(bg=BG_COLOR)
         self.root.minsize(900, 500)
 
@@ -65,15 +78,15 @@ class MicroTPCTGUI:
 
         # --- HEADER ---
         header_frame = tk.Frame(root, bg=PRIMARY_COLOR, height=60)
-        header_frame.grid(row=0, column=0, columnspan=4, sticky="ew", padx=0, pady=0)
+        header_frame.grid(row=0, column=0, columnspan=3, sticky="ew", padx=0, pady=0)
         
-        title_label = tk.Label(header_frame, text="🧬 MicroTPCT Pipeline", 
+        title_label = tk.Label(header_frame, text="MicroTPCT Pipeline", 
                                font=("Helvetica", 24, "bold"), 
                                fg=LIGHT_TEXT, bg=PRIMARY_COLOR)
         title_label.pack(pady=10)
 
         # --- LEFT COLUMN: Input Files ---
-        left_frame = tk.LabelFrame(root, text="📁 Input Files", padx=15, pady=15,
+        left_frame = tk.LabelFrame(root, text="Input Files", padx=15, pady=15,
                                    font=("Helvetica", 11, "bold"),
                                    fg=TEXT_COLOR, bg=BG_COLOR,
                                    relief=tk.RIDGE, borderwidth=2)
@@ -86,40 +99,44 @@ class MicroTPCTGUI:
         self._create_file_input(left_frame, "Output Directory", self.output_dir, 
                                self.browse_output, 2)
 
-        # --- MIDDLE COLUMN: Algorithm & Options ---
-        middle_frame = tk.LabelFrame(root, text="⚙️ Configuration", padx=15, pady=15,
+        # --- MIDDLE COLUMN: Algorithm, Configuration & Save Options ---
+        middle_frame = tk.Frame(root, bg=BG_COLOR)
+        middle_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+
+        # Configuration section
+        config_frame = tk.LabelFrame(middle_frame, text="Configuration", padx=15, pady=15,
                                      font=("Helvetica", 11, "bold"),
                                      fg=TEXT_COLOR, bg=BG_COLOR,
                                      relief=tk.RIDGE, borderwidth=2)
-        middle_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+        config_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        tk.Label(middle_frame, text="Algorithm", font=("Helvetica", 10),
+        tk.Label(config_frame, text="Algorithm", font=("Helvetica", 10),
                 bg=BG_COLOR, fg=TEXT_COLOR).grid(row=0, column=0, sticky="w", pady=5)
-        algo_menu = tk.OptionMenu(middle_frame, self.algorithm, *ALGORITHMS)
+        algo_menu = tk.OptionMenu(config_frame, self.algorithm, *ALGORITHMS)
         algo_menu.config(font=("Helvetica", 10), bg=LIGHT_TEXT)
         algo_menu.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
-        separator = tk.Frame(middle_frame, height=2, bg=PRIMARY_COLOR)
+        separator = tk.Frame(config_frame, height=2, bg=PRIMARY_COLOR)
         separator.grid(row=1, column=0, columnspan=2, sticky="ew", pady=10)
 
-        wildcard_check = tk.Checkbutton(middle_frame, text="Enable Wildcard?", 
+        wildcard_check = tk.Checkbutton(config_frame, text="Enable Wildcard?", 
                                        variable=self.wildcard_enabled,
                                        font=("Helvetica", 10), bg=BG_COLOR,
                                        fg=TEXT_COLOR)
         wildcard_check.grid(row=2, column=0, columnspan=2, sticky="w", pady=5)
 
-        tk.Label(middle_frame, text="Wildcard Char", font=("Helvetica", 10),
+        tk.Label(config_frame, text="Wildcard Char", font=("Helvetica", 10),
                 bg=BG_COLOR, fg=TEXT_COLOR).grid(row=3, column=0, sticky="w", pady=5)
-        wildcard_entry = tk.Entry(middle_frame, textvariable=self.wildcard_choice, 
+        wildcard_entry = tk.Entry(config_frame, textvariable=self.wildcard_choice, 
                                  width=5, font=("Helvetica", 10))
         wildcard_entry.grid(row=3, column=1, sticky="w", padx=5, pady=5)
 
-        # --- SAVE OPTIONS COLUMN ---
-        save_frame = tk.LabelFrame(root, text="💾 Save Options", padx=15, pady=15,
+        # Save Options section
+        save_frame = tk.LabelFrame(middle_frame, text="Save Options", padx=15, pady=15,
                                    font=("Helvetica", 11, "bold"),
                                    fg=TEXT_COLOR, bg=BG_COLOR,
                                    relief=tk.RIDGE, borderwidth=2)
-        save_frame.grid(row=1, column=2, padx=10, pady=10, sticky="nsew")
+        save_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         # Format selection
         tk.Label(save_frame, text="Output Format", font=("Helvetica", 10, "bold"),
@@ -147,56 +164,69 @@ class MicroTPCTGUI:
                       font=("Helvetica", 9), bg=BG_COLOR, fg=TEXT_COLOR).grid(row=5, column=0, columnspan=2, sticky="w", pady=3)
 
         # --- RIGHT COLUMN: Actions ---
-        right_frame = tk.LabelFrame(root, text="🚀 Actions", padx=15, pady=15,
+        right_frame = tk.LabelFrame(root, text="Actions", padx=15, pady=15,
                                     font=("Helvetica", 11, "bold"),
                                     fg=LIGHT_TEXT, bg=PRIMARY_COLOR,
                                     relief=tk.RIDGE, borderwidth=2)
-        right_frame.grid(row=1, column=3, padx=10, pady=10, sticky="nsew")
+        right_frame.grid(row=1, column=2, padx=10, pady=10, sticky="nsew")
 
-        self.run_btn = tk.Button(right_frame, text="▶ Run Pipeline", command=self.run_threaded, 
+        self.run_btn = tk.Button(right_frame, text="Run Pipeline", command=self.run_threaded, 
                            bg=SUCCESS_COLOR, fg=LIGHT_TEXT,
                            font=("Helvetica", 12, "bold"), padx=15, pady=15,
                            relief=tk.RAISED, bd=2, cursor="hand2",
                            activebackground="#1E8449")
-        self.run_btn.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.run_btn.grid(row=0, column=0, sticky="nsew", pady=5)
 
-        self.save_btn = tk.Button(right_frame, text="💾 Save Results", command=self.save_manually,
+        self.save_btn = tk.Button(right_frame, text="Save Results", command=self.save_manually,
                              bg="#F39C12", fg=LIGHT_TEXT,
                              font=("Helvetica", 11, "bold"), padx=15, pady=10,
                              relief=tk.RAISED, bd=1, cursor="hand2",
                              state=tk.DISABLED,
                              activebackground="#D68910")
-        self.save_btn.pack(fill=tk.X, pady=5)
+        self.save_btn.grid(row=1, column=0, sticky="ew", pady=5)
 
-        clear_btn = tk.Button(right_frame, text="🗑️ Clear", command=self.clear,
+        clear_btn = tk.Button(right_frame, text="Clear", command=self.clear,
                              bg=SECONDARY_COLOR, fg=LIGHT_TEXT,
                              font=("Helvetica", 11, "bold"), padx=15, pady=10,
                              relief=tk.RAISED, bd=1, cursor="hand2",
                              activebackground="#2874A6")
-        clear_btn.pack(fill=tk.X, pady=5)
+        clear_btn.grid(row=2, column=0, sticky="ew", pady=5)
 
-        exit_btn = tk.Button(right_frame, text="❌ Exit", command=self.root.quit,
+        exit_btn = tk.Button(right_frame, text="Exit", command=self.root.quit,
                             bg=ERROR_COLOR, fg=LIGHT_TEXT,
                             font=("Helvetica", 11, "bold"), padx=15, pady=10,
                             relief=tk.RAISED, bd=1, cursor="hand2",
                             activebackground="#C0392B")
-        exit_btn.pack(fill=tk.X, pady=5)
+        exit_btn.grid(row=3, column=0, sticky="ew", pady=5)
 
         # --- Status Bar ---
         self.status_label = tk.Label(root, text="Status: Ready", 
                                     font=("Helvetica", 10), fg="blue",
                                     bg=BG_COLOR, relief=tk.SUNKEN, bd=1)
-        self.status_label.grid(row=2, column=0, columnspan=4, sticky="ew", padx=10, pady=5)
+        self.status_label.grid(row=2, column=0, columnspan=3, sticky="ew", padx=10, pady=5)
 
         # Configure grid weights
-        root.columnconfigure(0, weight=1)
-        root.columnconfigure(1, weight=1)
-        root.columnconfigure(2, weight=1)
-        root.columnconfigure(3, weight=1)
+        root.columnconfigure(0, weight=1)  # Inputs
+        root.columnconfigure(1, weight=1)  # Config + Save
+        root.columnconfigure(2, weight=1)  # Actions 
         root.rowconfigure(1, weight=1)
 
     def _create_file_input(self, parent, label_text, var, command, row):
-        """Helper method to create consistent file input rows"""
+        """
+        Create a consistent file input row with label, entry field, and browse button.
+        
+        Args:
+            parent (tk.Frame): The parent frame to place the input row in.
+            label_text (str): The label text to display (e.g., "Proteome FASTA").
+            var (tk.StringVar): The StringVar to bind the file path to.
+            command (callable): The function to call when "Browse" button is clicked.
+            row (int): The grid row number to place the input row at.
+        
+        Creates a formatted row with:
+        - Label (column 0)
+        - Entry field (column 1)
+        - Browse button (column 2)
+        """
         tk.Label(parent, text=label_text, font=("Helvetica", 10),
                 bg=BG_COLOR, fg=TEXT_COLOR).grid(row=row, column=0, sticky="w", pady=5)
         entry = tk.Entry(parent, textvariable=var, width=25, 
@@ -209,16 +239,42 @@ class MicroTPCTGUI:
         btn.grid(row=row, column=2, padx=5, pady=5)
 
     def browse_fasta(self):
+        """
+        Open a file dialog to select a FASTA file.
+        
+        Updates self.fasta_path with the selected file path.
+        Filters for .fasta and .fa file extensions.
+        """
         self.fasta_path.set(filedialog.askopenfilename(filetypes=[("FASTA", "*.fasta *.fa")]))
     
     def browse_xlsx(self):
+        """
+        Open a file dialog to select a peptide file (Excel or CSV).
+        
+        Updates self.xlsx_path with the selected file path.
+        Filters for .xlsx and .csv file extensions.
+        """
         self.xlsx_path.set(filedialog.askopenfilename(filetypes=[("Peptide", "*.xlsx *.csv")]))
 
     def browse_output(self):
+        """
+        Open a directory dialog to select the output directory.
+        
+        Updates self.output_dir with the selected directory path.
+        """
         self.output_dir.set(filedialog.askdirectory())
 
     def clear(self):
-        """Clear all input fields"""
+        """
+        Clear all input fields and reset to default values.
+        
+        Resets:
+        - File paths (FASTA, peptide, output directory)
+        - Algorithm selection to first option
+        - Wildcard settings to disabled
+        - Matching results to None
+        - Save button state to disabled
+        """
         self.fasta_path.set("")
         self.xlsx_path.set("")
         self.output_dir.set("")
@@ -229,7 +285,13 @@ class MicroTPCTGUI:
         self.save_btn.config(state=tk.DISABLED)
 
     def run_threaded(self):
-        """Run pipeline in separate thread"""
+        """
+        Launch the pipeline execution in a separate thread.
+        
+        This prevents the UI from freezing during pipeline processing.
+        Validates inputs before starting the thread.
+        Disables the Run button and updates status during execution.
+        """
         if not self._validate_inputs():
             return
         
@@ -242,7 +304,18 @@ class MicroTPCTGUI:
         thread.start()
 
     def run(self):
-        """Execute the pipeline"""
+        """
+        Execute the MicroTPCT pipeline with selected parameters.
+        
+        Calls minimal_pipeline_gui() to:
+        1. Read FASTA proteome file
+        2. Read peptide file (XLSX or CSV)
+        3. Run peptide matching algorithm
+        4. Store results for manual saving
+        
+        Updates status label and enables Save button on success.
+        Shows error dialog if pipeline fails.
+        """
         try:
             self.status_label.config(text="Status: Processing...", fg="orange")
             self.root.update()
@@ -267,7 +340,20 @@ class MicroTPCTGUI:
             self.run_btn.config(state=tk.NORMAL)
 
     def save_manually(self):
-        """Manually save results with custom options"""
+        """
+        Manually save pipeline results with user-specified options.
+        
+        Validates that:
+        - Results exist (pipeline has been run)
+        - Save options are valid (format and filename)
+        
+        Uses settings from Save Options panel:
+        - Output format (Excel, CSV, or both)
+        - Custom filename
+        - Timestamp inclusion
+        
+        Shows success or error dialog after saving.
+        """
         if not self.matching_results:
             messagebox.showerror("Error", "No results to save. Run pipeline first.")
             return
@@ -282,7 +368,22 @@ class MicroTPCTGUI:
             messagebox.showerror("Error", f"✗ Failed to save: {str(e)}")
 
     def _save_results(self, matching_results):
-        """Save matching results in requested formats"""
+        """
+        Convert matching results to requested file formats and save.
+        
+        Args:
+            matching_results: The MatchResult object from the pipeline.
+        
+        Saves to output directory with:
+        - Filename: custom name + optional timestamp
+        - Formats: Excel (.xlsx) and/or CSV (.csv) as selected
+        
+        Converts MatchResult object to pandas DataFrame before saving.
+        Updates status label with saved filename.
+        
+        Raises:
+            Exception: If conversion or saving fails.
+        """
         import pandas as pd
         
         output_path = Path(self.output_dir.get())
@@ -318,7 +419,19 @@ class MicroTPCTGUI:
             raise Exception(f"Could not save results: {e}")
     
     def _validate_inputs(self):
-        """Validate all input fields"""
+        """
+        Validate that all required input files exist and are selected.
+        
+        Returns:
+            bool: True if all inputs are valid, False otherwise.
+        
+        Checks:
+        - FASTA file is selected and exists
+        - Peptide file is selected and exists
+        - Output directory is selected
+        
+        Shows error dialogs for missing or invalid inputs.
+        """
         if not self.fasta_path.get():
             messagebox.showerror("Error", "Select FASTA file")
             return False
@@ -337,7 +450,18 @@ class MicroTPCTGUI:
         return True
 
     def _validate_save_inputs(self):
-        """Validate save options"""
+        """
+        Validate that save options are valid before saving.
+        
+        Returns:
+            bool: True if save options are valid, False otherwise.
+        
+        Checks:
+        - At least one output format is selected (Excel or CSV)
+        - Custom filename is provided (not empty)
+        
+        Shows error dialogs for invalid save options.
+        """
         if not (self.save_excel.get() or self.save_csv.get()):
             messagebox.showerror("Error", "Select at least one output format")
             return False
@@ -346,10 +470,17 @@ class MicroTPCTGUI:
             return False
         return True
 
+
 def main():
+    """
+    Initialize and run the MicroTPCT GUI application.
+    
+    Creates the root tkinter window and starts the main event loop.
+    """
     root = tk.Tk()
     app = MicroTPCTGUI(root)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
