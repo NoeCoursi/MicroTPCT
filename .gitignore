@@ -23,9 +23,5 @@ Thumbs.db
 build/
 dist/
 
-
-# DATA
-raw_data/
-
-src/microtpct/core/plot_automaton.py
-
+# Notebooks outputs
+tutorial_run_output/

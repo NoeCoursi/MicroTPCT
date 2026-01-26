@@ -5,9 +5,6 @@ This module defines lightweight data contracts for protein and peptide
 inputs. These objects represent normalized inputs BEFORE conversion
 to core Sequence objects.
 
-NOTE: May be redundant with core/sequence.py... Should maybe considere
-deleting later on.
-
 Validation and biological rules are handled in io/validators.py.
 """
 

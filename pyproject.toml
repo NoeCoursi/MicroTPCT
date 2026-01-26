@@ -1,10 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "microtpct"
 version = "0.0.1-dev"
+description = "MicroTPCT: Microproteotypicity of Peptides Control Tool"
 
+readme = "README.md"
+requires-python = ">=3.9"
+
+authors = [
+    {name = "Ambre Bordas", email = "ambre@example.com"},
+    {name = "Meredith Biteau", email = "meredith@example.com"},
+    {name = "Ambroise Loab", email = "ambroise@example.com"},
+    {name = "Noé Cursimaux", email = "noe@example.com"},
+    {name = "Basile Bergeron", email = "basile@example.com"}
+]
+
+# Find packages in src/
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[project.scripts]
-microtpct = "microtpct.interfaces.cli:main"
-microtpct-gui = "microtpct.interfaces.gui:main"
