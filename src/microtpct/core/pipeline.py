@@ -16,7 +16,7 @@ from microtpct.io.converters import build_database
 from microtpct.core.databases import TargetDB
 
 
-from microtpct.core.match import MATCHING_ENGINES, run_find, run_ahocorasick
+from microtpct.core.match import get_engine
 from microtpct.core.match.wildcards_matcher import run_wildcard_match
 
 from microtpct.io.writers import write_outputs
@@ -157,9 +157,10 @@ def run_pipeline(
 
     # Strict matching (ignore wildcard)
     try:
-        matching_func = MATCHING_ENGINES[matching_engine]
-    except KeyError:
-        raise ValueError(f"Unsupported matching engine: '{matching_engine}'")
+        matching_func = get_engine(matching_engine)
+    except ValueError as e:
+        logger.error(str(e))
+        raise
 
     # Execute the engine
     logger.info(f"Running matching engine: {matching_engine} {"+ wildcards match" if effective_allow_wildcard else ""}")

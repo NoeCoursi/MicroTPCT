@@ -24,8 +24,22 @@ MATCHING_ENGINES = {
 }
 
 
-__all__ = ["MATCHING_ENGINES"]
-
-def list_available_engines():
+def list_available_engines() -> list[str]:
     """Return the list of available matching engine names."""
     return sorted(MATCHING_ENGINES.keys())
+
+
+def get_engine(name: str):
+    """Return a matching engine by name."""
+    if name not in MATCHING_ENGINES:
+        raise ValueError(
+            f"Unknown matching engine '{name}'. "
+            f"Available engines: {list_available_engines()}"
+        )
+    return MATCHING_ENGINES[name]
+
+__all__ = [
+    "MATCHING_ENGINES",
+    "list_available_engines",
+    "get_engine",
+]
