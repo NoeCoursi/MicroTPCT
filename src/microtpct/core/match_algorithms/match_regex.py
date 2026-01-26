@@ -5,7 +5,7 @@ from typing import Optional, Set, Tuple, Dict
 
 from microtpct.core.databases import TargetDB, QueryDB
 from microtpct.core.results import Match, MatchResult
-
+from microtpct.core.pipeline import _inject_wildcard_metadata #type: ignore
 
 # Creat a peptide dictionnary with peptide length as keys
 def get_peptide_dict(query_db: QueryDB) -> Dict[int, Tuple[str,str]]:
@@ -26,7 +26,7 @@ def get_X_subsequence(target_db: TargetDB, peptide_max_len: int) -> Dict[str, Tu
     keep only near-Unidentified amino acid region
     """
     around_X_pos = defaultdict(list)
-    for t_id, t_seq, x_pos in zip(target_db.ids, target_db.ambiguous_il_sequences, target_db.x_pos) :
+    for t_id, t_seq, x_pos in zip(target_db.ids, target_db.ambiguous_il_sequences, target_db.wildcards_pos) :
 
         start_position = max(0, x_pos - peptide_max_len -1)
         end_position = x_pos + peptide_max_len +1
@@ -41,10 +41,13 @@ def get_kmer_compiled_dict(target_id: str, sequence: str, k: int,t_pos, k_compil
     return k_compiled_dict
 
 
-def run_regex_search(target_db: TargetDB, query_db: QueryDB, wildcards: Optional[list] = None) -> MatchResult:
+def run_regex_search(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
 
     query_dict = get_peptide_dict(query_db)
     peptide_max_len = max(k for k in query_dict.keys())
+
+    _inject_wildcard_metadata(target_db, ["X"])
+
     full_X_subseq = get_X_subsequence(target_db, peptide_max_len)
 
 
