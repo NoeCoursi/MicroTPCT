@@ -5,6 +5,8 @@
 # sudo apt update
 # sudo apt install python3-tk
 
+from logging import root
+from logging import root
 import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -80,18 +82,34 @@ class MicroTPCTGUI:
         title_label.pack(pady=10)
 
         # --- LEFT COLUMN: Input Files ---
-        left_frame = tk.LabelFrame(root, text="Input Files", padx=15, pady=15,
-                                   font=("Helvetica", 11, "bold"),
-                                   fg=TEXT_COLOR, bg=BG_COLOR,
-                                   relief=tk.RIDGE, borderwidth=2)
+        left_frame = tk.Frame(root, bg=BG_COLOR)
         left_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
-        self._create_file_input(left_frame, "Proteome FASTA", self.proteome_path, 
-                               self.browse_proteome, 0)
-        self._create_file_input(left_frame, "Peptide (XLSX/CSV)", self.peptide_path, 
-                               self.browse_peptide, 1)
-        self._create_file_input(left_frame, "Output Directory", self.output_dir, 
-                               self.browse_output, 2)
+        # --- Input Files section ---
+        input_frame = tk.LabelFrame(left_frame, text="Input Files", padx=15, pady=15,
+                            font=("Helvetica", 11, "bold"),
+                            fg=TEXT_COLOR, bg=BG_COLOR,
+                            relief=tk.RIDGE, borderwidth=2)
+        input_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        self._create_file_input(input_frame, "Proteome FASTA", self.proteome_path, 
+                        self.browse_proteome, 0)
+        self._create_file_input(input_frame, "Peptide (XLSX/CSV)", self.peptide_path, 
+                        self.browse_peptide, 1)
+        self._create_file_input(input_frame, "Output Directory", self.output_dir, 
+                        self.browse_output, 2)
+
+        # --- Image display section (vide pour l'instant) ---
+        image_frame = tk.LabelFrame(left_frame, text="", padx=15, pady=15,
+                            font=("Helvetica", 11, "bold"),
+                            fg=TEXT_COLOR, bg=BG_COLOR,
+                            relief=tk.RIDGE, borderwidth=2)
+        image_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        # Exemple : placeholder pour l'image
+        placeholder_label = tk.Label(image_frame, text="Image will appear here",
+                             font=("Helvetica", 10), bg=BG_COLOR, fg=TEXT_COLOR)
+        placeholder_label.pack(expand=True, fill=tk.BOTH)
+
 
         # --- MIDDLE COLUMN: Algorithm, Configuration & Save Options ---
         middle_frame = tk.Frame(root, bg=BG_COLOR)
