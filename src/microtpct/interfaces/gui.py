@@ -51,7 +51,7 @@ class MicroTPCTGUI:
         self.root.configure(bg=BG_COLOR)
         self.root.minsize(900, 500)
 
-        # Store matching results for manual saving
+        # Store matching results for saving
         self.matching_results = None
 
         # Input and output variables
@@ -61,7 +61,6 @@ class MicroTPCTGUI:
         self.algorithm = tk.StringVar(value=ALGORITHMS[0])
         self.wildcard_enabled = tk.BooleanVar(value=False)
         self.wildcard_choice = tk.StringVar(value="X")
-        #self.output_format = tk.StringVar(value="xlsx")
         self.save_excel = tk.BooleanVar(value=True)
         self.save_csv = tk.BooleanVar(value=False)
         self.include_timestamp = tk.BooleanVar(value=True)
@@ -128,17 +127,6 @@ class MicroTPCTGUI:
                                    fg=TEXT_COLOR, bg=BG_COLOR,
                                    relief=tk.RIDGE, borderwidth=2)
         save_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-
-        #tk.Label(save_frame, text="Output Format", font=("Helvetica", 10, "bold"),
-        #         bg=BG_COLOR, fg=TEXT_COLOR).grid(row=0, column=0, sticky="w")
-
-        #tk.Radiobutton(save_frame, text="Excel (.xlsx)",
-        #       variable=self.output_format, value="xlsx",
-        #       bg=BG_COLOR).grid(row=1, column=0, sticky="w")
-
-        #tk.Radiobutton(save_frame, text="CSV (.csv)",
-        #       variable=self.output_format, value="csv",
-        #       bg=BG_COLOR).grid(row=2, column=0, sticky="w")
 
         # Format selection
         tk.Label(save_frame, text="Output Format", font=("Helvetica", 10, "bold"),
@@ -273,12 +261,10 @@ class MicroTPCTGUI:
         self.proteome_path.set("")
         self.peptide_path.set("")
         self.output_dir.set("")
-        #self.output_format.set("xlsx")
         self.algorithm.set(ALGORITHMS[0])
         self.wildcard_enabled.set(False)
         self.wildcard_choice.set("X")
         self.matching_results = None
-        #self.save_btn.config(state=tk.DISABLED)
 
     def run_threaded(self):
         """
@@ -321,18 +307,15 @@ class MicroTPCTGUI:
                 target_file=Path(self.proteome_path.get()),
                 query_file=Path(self.peptide_path.get()),
                 output_path=Path(self.output_dir.get()),
-                #output_format=self.output_format.get(),
                 matching_engine=self.algorithm.get(),
                 wildcards=self.wildcard_choice.get() if self.wildcard_enabled.get() else None,
-                #config=config,
             )
             if results is None:
-        # ça veut dire que run_pipeline a tout sauvegardé et ne retourne rien
                 messagebox.showinfo("Info", "Pipeline completed, results saved automatically")
             else:
                 self.matching_results = results
             
-            self.status_label.config(text="Status: Complete ✓ (Save results manually)", fg=SUCCESS_COLOR)
+            self.status_label.config(text="Status: Complete ✓", fg=SUCCESS_COLOR)
             
         except Exception as e:
             self.status_label.config(text="Status: Error ✗", fg=ERROR_COLOR)
