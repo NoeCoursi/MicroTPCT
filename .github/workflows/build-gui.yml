@@ -112,7 +112,8 @@ jobs:
         run: |
           wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
-          ./appimagetool-x86_64.AppImage AppDir MicroTPCT.AppImage
+          ./appimagetool-x86_64.AppImage --appimage-extract
+          ./squashfs-root/AppRun AppDir MicroTPCT.AppImage
 
       - uses: actions/upload-artifact@v4
         with:
