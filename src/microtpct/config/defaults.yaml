@@ -1,9 +1,0 @@
-# Usage exemple :
-
-# alignment:
-#   tool: diamond
-#   evalue: 1e-5
-
-# metrics:
-#   min_identity: 0.9
-#   uniqueness_weight: 0.5

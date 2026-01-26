@@ -23,6 +23,5 @@ Thumbs.db
 build/
 dist/
 
-# rawa_data
-
-raw_data/
+# Notebooks outputs
+tutorial_run_output/

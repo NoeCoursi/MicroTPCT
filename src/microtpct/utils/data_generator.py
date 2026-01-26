@@ -2,6 +2,8 @@ import random
 from datetime import datetime
 from typing import List, Optional, Tuple, Dict, Any
 import json
+from pathlib import Path
+import pandas as pd
 
 from microtpct.io.schema import ProteinInput, PeptideInput
 from microtpct.io.converters import build_database
@@ -382,7 +384,11 @@ def generate_benchmark_databases(
     seed: Optional[int] = None,
 
     # Config save
-    save_config_path: Optional[str] = None
+    save_config_path: Optional[str] = None,
+
+    # Database save
+    export_target_fasta_path: Optional[str] = None,
+    export_query_xlsx_path: Optional[str] = None,
 ):
     """
     Generate synthetic TargetDB and QueryDB for MicroTPCT benchmarking.
@@ -474,6 +480,12 @@ def generate_benchmark_databases(
     all_peptides = match_peptides + quasi_peptides + nomatch_peptides
     rng.shuffle(all_peptides)
 
+    if export_target_fasta_path:
+        export_target_fasta(proteins, export_target_fasta_path)
+
+    if export_query_xlsx_path:
+        export_query_xlsx(all_peptides, export_query_xlsx_path)
+
     # Build TargetDB and QueryDB using your pipeline
     target_db = build_database(proteins, SequenceRole.PROTEIN)
     query_db = build_database(all_peptides, SequenceRole.PEPTIDE)
@@ -498,6 +510,44 @@ def generate_benchmark_databases(
             json.dump(config, f, indent=2)
 
     return target_db, query_db, ground_truth, config
+
+
+def export_target_fasta(
+    proteins: List[ProteinInput],
+    path: str | Path,
+    prefix: str = "mtpct",
+):
+    """
+    Export Target proteome to FASTA.
+
+    Header format:
+        >mtpct|ACCESSION
+    """
+    path = Path(path)
+
+    with open(path, "w") as f:
+        for prot in proteins:
+            header = f">{prefix}|{prot.accession}"
+            f.write(header + "\n")
+            f.write(prot.sequence + "\n")
+
+
+def export_query_xlsx(
+    peptides: List[PeptideInput],
+    path: str | Path,
+):
+    """
+    Export Query peptides to Excel with columns:
+        accession | sequence
+    """
+    path = Path(path)
+
+    df = pd.DataFrame({
+        "accession": [p.accession for p in peptides],
+        "sequence": [p.sequence for p in peptides],
+    })
+
+    df.to_excel(path, index=False)
 
 
 if __name__ == "__main__":
