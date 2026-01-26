@@ -1,0 +1,123 @@
+name: Build GUI executables
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build Windows EXE
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install .
+
+      - name: Build EXE
+        run: pyinstaller --onefile --windowed src/interfaces/GUI.py #--icon=my_icon.ico
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MicroTPCT-Windows
+          path: dist/*.exe
+
+  build-macos:
+    name: Build macOS App
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install .
+
+      - name: Build App
+        run: pyinstaller --onefile --windowed src/interfaces/GUI.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MicroTPCT-macOS
+          path: dist/*
+
+  build-linux:
+    name: Build Linux packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install system tools
+        run: |
+          sudo apt update
+          sudo apt install -y patchelf fakeroot dpkg-dev wget
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install .
+
+      - name: Build binary
+        run: pyinstaller --onefile src/interfaces/GUI.py
+
+      - name: Prepare AppDir
+        run: |
+          mkdir -p AppDir/usr/bin
+          cp dist/GUI AppDir/usr/bin/MicroTPCT
+          chmod +x AppDir/usr/bin/MicroTPCT
+
+      - name: Build tar.gz
+        run: |
+          tar czf MicroTPCT-linux.tar.gz -C dist GUI
+
+      - name: Build .deb
+        run: |
+          mkdir -p deb/MicroTPCT/usr/bin
+          cp dist/GUI deb/MicroTPCT/usr/bin/MicroTPCT
+
+          mkdir -p deb/MicroTPCT/DEBIAN
+          echo "Package: microtpct
+          Version: 1.0
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Noe
+          Description: MicroTPCT GUI" > deb/MicroTPCT/DEBIAN/control
+
+          dpkg-deb --build deb/MicroTPCT MicroTPCT.deb
+
+      - name: Build AppImage
+        run: |
+          wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+          ./appimagetool-x86_64.AppImage AppDir MicroTPCT.AppImage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MicroTPCT-Linux
+          path: |
+            *.AppImage
+            *.deb
+            *.tar.gz
