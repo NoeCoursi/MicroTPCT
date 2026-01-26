@@ -167,7 +167,7 @@ def extract_matching_peptides(
         )
 
         peptides.append(peptide)
-        ground_truth.append((peptide, prot_idx, start))
+        ground_truth.append((peptide.accession, prot_idx, start))
 
     return peptides, ground_truth
 
@@ -486,24 +486,23 @@ def generate_benchmark_databases(
     if export_query_xlsx_path:
         export_query_xlsx(all_peptides, export_query_xlsx_path)
 
-    # Build TargetDB and QueryDB using your pipeline
+    # Build TargetDB and QueryDB
     target_db = build_database(proteins, SequenceRole.PROTEIN)
     query_db = build_database(all_peptides, SequenceRole.PEPTIDE)
 
-    # Build ground truth using actual query IDs
-    matches: List[Match] = []
-    for peptide_obj, prot_idx, pos in raw_ground_truth:
-        query_idx = query_db.sequences.index(peptide_obj.sequence)
-        query_id = query_db.ids[query_idx]
-        target_id = target_db.ids[prot_idx]
+    gt_matches: List[Match] = []
 
-        matches.append(Match(
-            query_id=query_id,
-            target_id=target_id,
-            position=pos,
-        ))
+    for t_id, t_seq in zip(target_db.ids, target_db.ambiguous_il_sequences):
+        for q_id, q_seq in zip(query_db.ids, query_db.ambiguous_il_sequences):
+            start = t_seq.find(q_seq)
+            if start != -1:
+                gt_matches.append(Match(
+                    query_id=q_id,
+                    target_id=t_id,
+                    position=start,
+                ))
 
-    ground_truth = MatchResult(matches)
+    ground_truth = MatchResult(gt_matches)
 
     if save_config_path:
         with open(save_config_path, "w") as f:

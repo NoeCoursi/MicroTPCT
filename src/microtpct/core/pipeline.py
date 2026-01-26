@@ -20,7 +20,7 @@ from microtpct.core.match import get_engine
 from microtpct.core.match.wildcards_matcher import run_wildcard_match
 
 from microtpct.io.writers import write_outputs
-from microtpct.utils.logging import setup_logger
+from microtpct.utils.logger import setup_logger
 
 
 PathLike = str | Path
