@@ -15,15 +15,11 @@ from datetime import datetime
 repo_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(repo_root))
 
-from tests.minimal_pipeline import minimal_pipeline_gui
+from microtpct.core import results
+from microtpct.core.pipeline import run_pipeline
+from microtpct.core.match import list_available_engines
 
-ALGORITHMS = ["boyer_moore", 
-              "match_ahocorasick", 
-              "match_ahocorasick_rs", 
-              "match_blast_basic", 
-              "match_blast", 
-              "match_find", 
-              "match_in" ]
+ALGORITHMS = list_available_engines()
 
 # --- Color Scheme ---
 PRIMARY_COLOR = "#2C3E50"
@@ -59,16 +55,17 @@ class MicroTPCTGUI:
         self.matching_results = None
 
         # Input and output variables
-        self.fasta_path = tk.StringVar()
-        self.xlsx_path = tk.StringVar()
+        self.proteome_path = tk.StringVar()
+        self.peptide_path = tk.StringVar()
         self.output_dir = tk.StringVar()
         self.algorithm = tk.StringVar(value=ALGORITHMS[0])
         self.wildcard_enabled = tk.BooleanVar(value=False)
         self.wildcard_choice = tk.StringVar(value="X")
+        #self.output_format = tk.StringVar(value="xlsx")
         self.save_excel = tk.BooleanVar(value=True)
         self.save_csv = tk.BooleanVar(value=False)
         self.include_timestamp = tk.BooleanVar(value=True)
-        self.filename_custom = tk.StringVar(value="results")
+        self.filename_custom = tk.StringVar(value="results")        
 
         # --- HEADER ---
         header_frame = tk.Frame(root, bg=PRIMARY_COLOR, height=60)
@@ -86,10 +83,10 @@ class MicroTPCTGUI:
                                    relief=tk.RIDGE, borderwidth=2)
         left_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
-        self._create_file_input(left_frame, "Proteome FASTA", self.fasta_path, 
-                               self.browse_fasta, 0)
-        self._create_file_input(left_frame, "Peptide (XLSX/CSV)", self.xlsx_path, 
-                               self.browse_xlsx, 1)
+        self._create_file_input(left_frame, "Proteome FASTA", self.proteome_path, 
+                               self.browse_proteome, 0)
+        self._create_file_input(left_frame, "Peptide (XLSX/CSV)", self.peptide_path, 
+                               self.browse_peptide, 1)
         self._create_file_input(left_frame, "Output Directory", self.output_dir, 
                                self.browse_output, 2)
 
@@ -132,6 +129,17 @@ class MicroTPCTGUI:
                                    relief=tk.RIDGE, borderwidth=2)
         save_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
+        #tk.Label(save_frame, text="Output Format", font=("Helvetica", 10, "bold"),
+        #         bg=BG_COLOR, fg=TEXT_COLOR).grid(row=0, column=0, sticky="w")
+
+        #tk.Radiobutton(save_frame, text="Excel (.xlsx)",
+        #       variable=self.output_format, value="xlsx",
+        #       bg=BG_COLOR).grid(row=1, column=0, sticky="w")
+
+        #tk.Radiobutton(save_frame, text="CSV (.csv)",
+        #       variable=self.output_format, value="csv",
+        #       bg=BG_COLOR).grid(row=2, column=0, sticky="w")
+
         # Format selection
         tk.Label(save_frame, text="Output Format", font=("Helvetica", 10, "bold"),
                 bg=BG_COLOR, fg=TEXT_COLOR).grid(row=0, column=0, columnspan=2, sticky="w")
@@ -171,13 +179,6 @@ class MicroTPCTGUI:
                            activebackground="#1E8449")
         self.run_btn.grid(row=0, column=0, sticky="ew", pady=5)
 
-        self.save_btn = tk.Button(right_frame, text="Save Results", command=self.save_manually,
-                             bg="#F39C12", fg=LIGHT_TEXT,
-                             font=("Helvetica", 11, "bold"), padx=15, pady=10,
-                             relief=tk.RAISED, bd=1, cursor="hand2",
-                             state=tk.DISABLED,
-                             activebackground="#D68910")
-        self.save_btn.grid(row=1, column=0, sticky="ew", pady=5)
 
         clear_btn = tk.Button(right_frame, text="Clear", command=self.clear,
                              bg=SECONDARY_COLOR, fg=LIGHT_TEXT,
@@ -232,23 +233,23 @@ class MicroTPCTGUI:
                        relief=tk.RAISED, bd=1, cursor="hand2")
         btn.grid(row=row, column=2, padx=5, pady=5)
 
-    def browse_fasta(self):
+    def browse_proteome(self):
         """
         Open a file dialog to select a FASTA file.
         
-        Updates self.fasta_path with the selected file path.
+        Updates self.proteome_path with the selected file path.
         Filters for .fasta and .fa file extensions.
         """
-        self.fasta_path.set(filedialog.askopenfilename(filetypes=[("FASTA", "*.fasta *.fa")]))
+        self.proteome_path.set(filedialog.askopenfilename(filetypes=[("FASTA", "*.fasta *.fa")]))
     
-    def browse_xlsx(self):
+    def browse_peptide(self):
         """
         Open a file dialog to select a peptide file (Excel or CSV).
         
-        Updates self.xlsx_path with the selected file path.
+        Updates self.peptide_path with the selected file path.
         Filters for .xlsx and .csv file extensions.
         """
-        self.xlsx_path.set(filedialog.askopenfilename(filetypes=[("Peptide", "*.xlsx *.csv")]))
+        self.peptide_path.set(filedialog.askopenfilename(filetypes=[("Peptide", "*.xlsx *.csv")]))
 
     def browse_output(self):
         """
@@ -269,14 +270,15 @@ class MicroTPCTGUI:
         - Matching results to None
         - Save button state to disabled
         """
-        self.fasta_path.set("")
-        self.xlsx_path.set("")
+        self.proteome_path.set("")
+        self.peptide_path.set("")
         self.output_dir.set("")
+        #self.output_format.set("xlsx")
         self.algorithm.set(ALGORITHMS[0])
         self.wildcard_enabled.set(False)
         self.wildcard_choice.set("X")
         self.matching_results = None
-        self.save_btn.config(state=tk.DISABLED)
+        #self.save_btn.config(state=tk.DISABLED)
 
     def run_threaded(self):
         """
@@ -301,7 +303,7 @@ class MicroTPCTGUI:
         """
         Execute the MicroTPCT pipeline with selected parameters.
         
-        Calls minimal_pipeline_gui() to:
+        Calls pipeline to:
         1. Read FASTA proteome file
         2. Read peptide file (XLSX or CSV)
         3. Run peptide matching algorithm
@@ -314,18 +316,23 @@ class MicroTPCTGUI:
             self.status_label.config(text="Status: Processing...", fg="orange")
             self.root.update()
             
-            self.matching_results = minimal_pipeline_gui(
-                fasta_path=Path(self.fasta_path.get()),
-                peptide_path=Path(self.xlsx_path.get()),
+
+            results = run_pipeline(
+                target_file=Path(self.proteome_path.get()),
+                query_file=Path(self.peptide_path.get()),
                 output_path=Path(self.output_dir.get()),
-                algorithm=self.algorithm.get(),
-                wildcard=self.wildcard_choice.get() if self.wildcard_enabled.get() else None,
-                config=config,
+                #output_format=self.output_format.get(),
+                matching_engine=self.algorithm.get(),
+                wildcards=self.wildcard_choice.get() if self.wildcard_enabled.get() else None,
+                #config=config,
             )
+            if results is None:
+        # ça veut dire que run_pipeline a tout sauvegardé et ne retourne rien
+                messagebox.showinfo("Info", "Pipeline completed, results saved automatically")
+            else:
+                self.matching_results = results
             
             self.status_label.config(text="Status: Complete ✓ (Save results manually)", fg=SUCCESS_COLOR)
-            self.save_btn.config(state=tk.NORMAL)
-            messagebox.showinfo("Success", "✓ Pipeline completed!\nClick 'Save Results' to save.")
             
         except Exception as e:
             self.status_label.config(text="Status: Error ✗", fg=ERROR_COLOR)
@@ -333,33 +340,6 @@ class MicroTPCTGUI:
         finally:
             self.run_btn.config(state=tk.NORMAL)
 
-    def save_manually(self):
-        """
-        Manually save pipeline results with user-specified options.
-        
-        Validates that:
-        - Results exist (pipeline has been run)
-        - Save options are valid (format and filename)
-        
-        Uses settings from Save Options panel:
-        - Output format (Excel, CSV, or both)
-        - Custom filename
-        - Timestamp inclusion
-        
-        Shows success or error dialog after saving.
-        """
-        if not self.matching_results:
-            messagebox.showerror("Error", "No results to save. Run pipeline first.")
-            return
-        
-        if not self._validate_save_inputs():
-            return
-        
-        try:
-            self._save_results(self.matching_results)
-            messagebox.showinfo("Success", "✓ Results saved successfully!")
-        except Exception as e:
-            messagebox.showerror("Error", f"✗ Failed to save: {str(e)}")
 
     def _save_results(self, matching_results):
         """
@@ -381,9 +361,8 @@ class MicroTPCTGUI:
         import pandas as pd
         
         output_path = Path(self.output_dir.get())
-        
-        # Build filename
         filename = self.filename_custom.get()
+
         if self.include_timestamp.get():
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"{filename}_{timestamp}"
@@ -394,21 +373,24 @@ class MicroTPCTGUI:
                 df = matching_results.to_dataframe()
             else:
                 df = pd.DataFrame([vars(matching_results)])
-            
-            # Save as Excel
+
+            saved_files = []
+
             if self.save_excel.get():
-                excel_file = output_path / f"{filename}.xlsx"
-                df.to_excel(excel_file, index=False)
-                self.status_label.config(text=f"Status: Saved to {excel_file.name}", fg=SUCCESS_COLOR)
-                print(f"✓ Saved: {excel_file}")
-            
-            # Save as CSV
+                file_xlsx = output_path / f"{filename}.xlsx"
+                df.to_excel(file_xlsx, index=False)
+                saved_files.append(file_xlsx.name)
+
             if self.save_csv.get():
-                csv_file = output_path / f"{filename}.csv"
-                df.to_csv(csv_file, index=False)
-                self.status_label.config(text=f"Status: Saved to {csv_file.name}", fg=SUCCESS_COLOR)
-                print(f"✓ Saved: {csv_file}")
-        
+                file_csv = output_path / f"{filename}.csv"
+                df.to_csv(file_csv, index=False)
+                saved_files.append(file_csv.name)
+
+            self.status_label.config(
+                text=f"Status: Saved to {', '.join(saved_files)}",
+                fg=SUCCESS_COLOR
+            )
+
         except Exception as e:
             raise Exception(f"Could not save results: {e}")
     
@@ -426,16 +408,16 @@ class MicroTPCTGUI:
         
         Shows error dialogs for missing or invalid inputs.
         """
-        if not self.fasta_path.get():
+        if not self.proteome_path.get():
             messagebox.showerror("Error", "Select FASTA file")
             return False
-        if not Path(self.fasta_path.get()).exists():
+        if not Path(self.proteome_path.get()).exists():
             messagebox.showerror("Error", "FASTA file not found")
             return False
-        if not self.xlsx_path.get():
+        if not self.peptide_path.get():
             messagebox.showerror("Error", "Select peptide file")
             return False
-        if not Path(self.xlsx_path.get()).exists():
+        if not Path(self.peptide_path.get()).exists():
             messagebox.showerror("Error", "Peptide file not found")
             return False
         if not self.output_dir.get():
