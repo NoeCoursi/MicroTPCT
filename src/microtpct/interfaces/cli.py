@@ -6,12 +6,14 @@ Author: Basile Bergeron, Meredith Biteau, Ambre Bordas, Noé Cursimaux, Ambroise
 
 import click,  subprocess, sys #type: ignore
 
+from datetime import datetime
 from typing import List, Tuple, Literal, Dict
 from pathlib import Path
 from contextlib import redirect_stdout, redirect_stderr, ExitStack
 from yaspin import yaspin #type: ignore
 from yaspin.spinners import Spinners #type: ignore
 
+from microtpct.core.pipeline import run_pipeline
 
 # Message helpers
 def echo_info(msg: str):
@@ -24,18 +26,36 @@ def echo_error(msg: str):
 class PipelineRunner:
     WILDCARD_CHOICES = ["B", "X", "Z", "J", "U", "O", "-", ".", "?"]
 
-    def __init__(self, query_input, target_input, algo="aho",
-                 wildcards=(), output=None, log=False, err=False):
+
+    def __init__(
+        self,
+        query_input,
+        target_input,
+        algo="aho",
+        wildcards=(),
+        output=None,
+        log=False,
+        err=False,
+        ext="csv",
+        tf=None,
+        qf=None,
+        ts=None,
+        qs=None,
+        name=""
+    ):
         self.query_input = Path(query_input)
         self.target_input = Path(target_input)
         self.algo = algo
         self.wildcards = wildcards
-        self.output_path = Path(output) if output else Path.cwd()
+        self.output_path = Path(output).resolve() if output else self.query_input.parent.resolve()
+        self.ext = ext
         self.log = log
         self.err = err
-
-        # Create output directory if it doesn't exist
-        self.output_path.mkdir(parents=True, exist_ok=True)
+        self.tf = tf
+        self.qf = qf
+        self.ts = ts
+        self.qs = qs
+        self.analyse_name = name
 
     # Validation
     @staticmethod
@@ -54,35 +74,67 @@ class PipelineRunner:
             raise click.UsageError("Please select only one algorithm")
         return selected[0] if selected else "aho"
 
+    @staticmethod
+    def _timestamp():
+        return datetime.now()
+
+    def manage_output_path(self) -> None:
+        ts = self._timestamp()
+        self.result_file = Path(self.output_path, f"microtpct_matching_result_{ts.strftime("%Y%m%d_%H%M%S")}.{self.ext}")
+        self.stats_file  = Path(self.output_path, f"microtpct_statistics_{ts.strftime("%Y%m%d_%H%M%S")}.{self.ext}")
+        return
+
+    def format_wildcard(self) -> None:
+        self.wildcard_as_list = [w for w in self.wildcards]
+        self.wildcard_flag = True if self.wildcard_as_list else False
     
-    # ----------------------------
+    def format_output_format(self) -> None:
+        self.ext = self.ext if self.ext else "csv"
+
+
+
+
     # Pipeline execution
-    # ----------------------------
-    def run_pipeline(self):
+    def launch_pipeline(self):
         """Print info and simulate pipeline execution"""
-        print("\n")
-        print(f"Algo   : {self.algo}")
-        print(f"Output : {self.output_path}")
-        print(f"allow_wildcard : {self.wildcards}")
-        print(f"Query  : {self.query_input}")
-        print(f"Target : {self.target_input}")
-        print("LANCEMENT PIPELINE")
+
+        ts = self._timestamp()
+
+        self.format_wildcard()
+        self.format_output_format()
 
         with ExitStack() as stack:
             if self.log:
-                log_path = self.output_path / "stdout.log"
+                log_foler_path = Path(self.output_path, "microTPCT_log")
+                log_foler_path.mkdir(parents=True, exist_ok=True)
+                log_path = log_foler_path / f"microtpct_matching_result_{str(self.analyse_name) if self.analyse_name else ""}_{ts.strftime('%Y%m%d_%H%M%S')}.log"
+
                 log_f = stack.enter_context(open(log_path, "w"))
                 stack.enter_context(redirect_stdout(log_f))
 
             if self.err:
-                err_path = self.output_path / "stdout.err"
+                err_foler_path = Path(self.output_path, "microTPCT_err")
+                err_foler_path.mkdir(parents=True, exist_ok=True)
+                err_path = err_foler_path / f"microtpct_matching_result_{str(self.analyse_name) if self.analyse_name else ""}_{ts.strftime('%Y%m%d_%H%M%S')}.err"
+
                 err_f = stack.enter_context(open(err_path, "w"))
                 stack.enter_context(redirect_stderr(err_f))
 
-            # TODO replace with actual call
-            print(self.algo, self.wildcards, self.output_path,
-                  self.query_input, self.target_input)
 
+            run_pipeline(
+                self.target_input, #target_file: PathLike,
+                self.query_input,  #query_file: PathLike,
+                self.tf,              #target_format: str | None = None,
+                self.qf,              #query_format: str | None = None,
+                self.ts,              #target_separator: str | None = None,
+                self.qs,              #query_separator: str | None = None,
+                self.output_path,  #output_path: PathLike | None = None,
+                self.ext,             #output_format: Literal["excel", "csv"] = "csv",
+                self.analyse_name,              #analysis_name: str | None = None,    
+                log_path,          #log_file: PathLike | None = None,    
+                self.wildcard_flag,              #allow_wildcard: bool = True,    
+                self.wildcards,    #wildcards: str | List[str] = "X",
+                self.algo)         #matching_engine: str = "aho",
             exit(1)
 
 
@@ -105,7 +157,6 @@ class PipelineRunner:
 
 # called start_callback and usage_callback called before cli
 # if --start or --usage are parsed
-
 def start_callback(ctx: click.Context, param: click.Parameter, value):
     """
     Executed start() if --start is used to install dependencies
@@ -162,7 +213,9 @@ def usage_callback(ctx: click.Context, param: click.Parameter, value):
 # Wildcards
 @click.option("--allow_wildcard",
     multiple=True,
-    type=click.Choice(PipelineRunner.WILDCARD_CHOICES, case_sensitive=True),
+    # Next line in to force WILDCARD_CHOICES to --allow_wildcard input
+    #type=click.Choice(PipelineRunner.WILDCARD_CHOICES, case_sensitive=True),
+    type=str,
     help="Allows wildcards processing (choose from [B,X,Z,J,U,O,-,.,?])"
 )
 
@@ -174,9 +227,6 @@ def usage_callback(ctx: click.Context, param: click.Parameter, value):
     callback=start_callback,
     help="Install dependencies and exit",
 )
-@click.option("-o", "--output",
-              type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-              help="Output directory")
 @click.option("--log", is_flag=True, help="Write all stdout to FILE")
 @click.option("--err", is_flag=True, help="Write all error to FILE")
 @click.option("--usage",
@@ -186,6 +236,20 @@ def usage_callback(ctx: click.Context, param: click.Parameter, value):
     callback=usage_callback,
     help="Install dependencies and exit",
 )
+@click.option("--name", type=str, help="Specify the analysis name")
+
+# OI option
+@click.option("-o", "--output",
+              type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+              help="Output directory")
+@click.option("--ext",
+    type=click.Choice(["csv", "xlsx"], case_sensitive=False),
+    help="Specify output file format [csv/xlsx]")
+@click.option("--tf",type=str, help="Specify target file format")
+@click.option("--qf",type=str, help="Specify query file format")
+@click.option("--ts",type=str, help="Specify target file separator (if csv/xlsx/tsv...)")
+@click.option("--qs",type=str, help="Specify target file separator (if csv/xlsx/tsv...)")
+
 
 # Arguments
 @click.argument("query_input",
@@ -204,10 +268,16 @@ def cli(
     find: bool,
     allow_wildcard: Tuple[str, ...],
     output: str | Path,
+    ext: str,
     log: bool,
     err: bool,
     query_input: str | Path,
     target_input: str | Path,
+    name: str,
+    tf: str ,
+    qf: str ,
+    ts: str ,
+    qs: str 
 ) -> None:
     
     """
@@ -231,9 +301,15 @@ def cli(
         wildcards=allow_wildcard,
         output=output,
         log=log,
-        err=err
+        err=err,
+        ext=ext,
+        name=name,
+        tf=tf,
+        qf=qf,
+        ts=ts,
+        qs=qs
     )
-    runner.run_pipeline()
+    runner.launch_pipeline()
 
 
 
