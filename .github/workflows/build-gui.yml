@@ -50,7 +50,7 @@ jobs:
           pip install .
 
       - name: Build App
-        run: pyinstaller --onefile --windowed src/microtpct/interfaces/gui.py.py
+        run: pyinstaller --onefile --windowed src/microtpct/interfaces/gui.py
 
       - uses: actions/upload-artifact@v4
         with:
@@ -85,17 +85,17 @@ jobs:
       - name: Prepare AppDir
         run: |
           mkdir -p AppDir/usr/bin
-          cp dist/GUI AppDir/usr/bin/MicroTPCT
+          cp dist/gui AppDir/usr/bin/MicroTPCT
           chmod +x AppDir/usr/bin/MicroTPCT
 
       - name: Build tar.gz
         run: |
-          tar czf MicroTPCT-linux.tar.gz -C dist GUI
+          tar czf MicroTPCT-linux.tar.gz -C dist gui
 
       - name: Build .deb
         run: |
           mkdir -p deb/MicroTPCT/usr/bin
-          cp dist/GUI deb/MicroTPCT/usr/bin/MicroTPCT
+          cp dist/gui deb/MicroTPCT/usr/bin/MicroTPCT
 
           mkdir -p deb/MicroTPCT/DEBIAN
           echo "Package: microtpct
@@ -104,7 +104,7 @@ jobs:
           Priority: optional
           Architecture: amd64
           Maintainer: Noe
-          Description: MicroTPCT GUI" > deb/MicroTPCT/DEBIAN/control
+          Description: MicroTPCT gui" > deb/MicroTPCT/DEBIAN/control
 
           dpkg-deb --build deb/MicroTPCT MicroTPCT.deb
 
