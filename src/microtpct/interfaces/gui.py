@@ -17,9 +17,13 @@ sys.path.append(str(repo_root))
 
 from microtpct.core import results
 from microtpct.core.pipeline import run_pipeline
-from microtpct.core.match import list_available_engines
+from microtpct.core.match import list_available_engines, user_friendly_engine_name
 
 ALGORITHMS = list_available_engines()
+
+# User-friendly mapping of algorithm keys to display names
+ENGINE_NAMES = {key: user_friendly_engine_name(key) for key in ALGORITHMS}
+ALGORITHMS_DISPLAY = list(ENGINE_NAMES.values())
 
 # --- Color Scheme ---
 PRIMARY_COLOR = "#2C3E50"
@@ -59,12 +63,12 @@ class MicroTPCTGUI:
         self.peptide_path = tk.StringVar()
         self.output_dir = tk.StringVar()
         self.algorithm = tk.StringVar(value=ALGORITHMS[0])
-        self.wildcard_enabled = tk.BooleanVar(value=False)
+        self.wildcard_enabled = tk.BooleanVar(value=True)
         self.wildcard_choice = tk.StringVar(value="X")
         self.save_excel = tk.BooleanVar(value=True)
         self.save_csv = tk.BooleanVar(value=False)
         self.include_timestamp = tk.BooleanVar(value=True)
-        self.filename_custom = tk.StringVar(value="results")        
+        self.filename_custom = tk.StringVar(value="results") 
 
         # --- HEADER ---
         header_frame = tk.Frame(root, bg=PRIMARY_COLOR, height=60)
@@ -102,7 +106,9 @@ class MicroTPCTGUI:
 
         tk.Label(config_frame, text="Algorithm", font=("Helvetica", 10),
                 bg=BG_COLOR, fg=TEXT_COLOR).grid(row=0, column=0, sticky="w", pady=5)
-        algo_menu = tk.OptionMenu(config_frame, self.algorithm, *ALGORITHMS)
+
+        self.algorithm_display = tk.StringVar(value=ALGORITHMS_DISPLAY[0])
+        algo_menu = tk.OptionMenu(config_frame, self.algorithm_display, *ALGORITHMS_DISPLAY)
         algo_menu.config(font=("Helvetica", 10), bg=LIGHT_TEXT)
         algo_menu.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
@@ -302,12 +308,17 @@ class MicroTPCTGUI:
             self.status_label.config(text="Status: Processing...", fg="orange")
             self.root.update()
             
+            # Récupérer la clé correspondante à partir du nom affiché
+            selected_display_name = self.algorithm_display.get()
+            matching_engine_key = next(
+                key for key, name in ENGINE_NAMES.items() if name == selected_display_name
+            )
 
             results = run_pipeline(
                 target_file=Path(self.proteome_path.get()),
                 query_file=Path(self.peptide_path.get()),
                 output_path=Path(self.output_dir.get()),
-                matching_engine=self.algorithm.get(),
+                matching_engine=matching_engine_key, #self.algorithm.get(),
                 wildcards=self.wildcard_choice.get() if self.wildcard_enabled.get() else None,
             )
             if results is None:
