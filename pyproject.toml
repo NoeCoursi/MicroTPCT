@@ -9,8 +9,15 @@ description = "MicroTPCT: Microproteotypicity of Peptides Control Tool"
 
 readme = "README.md"
 requires-python = ">=3.9"
-# dependencies
 
+authors = [
+    {name = "Ambre Bordas", email = "ambre@example.com"},
+    {name = "Meredith Biteau", email = "meredith@example.com"},
+    {name = "Ambroise Loab", email = "ambroise@example.com"},
+    {name = "Noé Cursimaux", email = "noe@example.com"},
+    {name = "Basile Bergeron", email = "basile@example.com"}
+]
+
+# Find packages in src/
 [tool.setuptools.packages.find]
 where = ["src"]
-

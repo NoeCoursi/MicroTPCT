@@ -1,0 +1,63 @@
+Microproteotypicity of Peptides – Computational Toolkit
+
+		==============================================
+    
+		           ████████╗██████╗  ██████╗████████╗
+		 ██╗   ██╗ ╚══██╔══╝██╔══██╗██╔════╝╚══██╔══╝
+		 ██║   ██║    ██║   ██████╔╝██║        ██║   
+		 ██║   ██║    ██║   ██╔═══╝ ███████╗   ██║   
+		 ███████╔╝    ╚═╝   ╚═╝      ╚═════╝   ╚═╝   
+		 █╚═════╝
+		 █
+		==============================================
+
+Usage:
+  microTPCT [options] QUERY_input TARGET_input
+
+Description:
+
+  MicroTPCT is a bioinformatics toolkit designed to identify and evaluate
+  candidate microproteins by matching peptides from alternative proteomes
+  against canonical proteomes using multiple matching strategies. This s-
+  -oftware enables processing of wildcards in the target file using the 
+  option --allow_wildcard.
+
+----------------------------------------------------------------------------------------------------
+
+Options:
+
+  --aho   (default)    Perform Aho–Corasick based peptide matching
+                        -> Highly recommended
+  --bm                 Perform Boyer-Moore based peptide matching
+  --ag                 Perform [AWK - GREP] based peptide matching
+  --blast              Perform local BLAST-based peptide matching
+  --regex              Perform regex-based peptide matching
+  		          ->  not recommended as the primary algorithm
+  			      better used with option --allow_wildcard
+  --find               Use native python .find() matching
+
+
+
+  --allow_wildcard     Complementary regex search for undetermined 
+                        amino acids in the target file
+
+    e.g : microTPCT --allow_wildcard X QUERY_input TARGET_input
+          microTPCT --allow_wildcard X Y  QUERY_input TARGET_input
+          microTPCT --allow_wildcard  QUERY_input TARGET_input
+                        -> specifying a wildcard is mandatory
+
+----------------------------------------------------------------------------------------------------
+
+General options:
+
+
+  --start              Setup the software on your machine, install dependencies
+  --help               Show small usage info
+  --version            Show program version and exit
+  --log                Write logs to FILE in RESULTS_FOLDER
+  --error              Write errors to FILE in RESULTS_FOLDER
+  --usage              Shows detailed usage
+  -o, --output OUTPUT_PATH/<NEW_FOLDER_NAME> 	
+                       Defines output file path. If not provided,
+                       an output folder will be created in the parent 
+  					           directory of the current working directory.
