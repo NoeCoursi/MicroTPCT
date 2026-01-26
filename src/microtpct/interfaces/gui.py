@@ -27,7 +27,7 @@ ALGORITHMS = list_available_engines()
 ENGINE_NAMES = {key: user_friendly_engine_name(key) for key in ALGORITHMS}
 ALGORITHMS_DISPLAY = list(ENGINE_NAMES.values())
 
-# --- Color Scheme ---
+# Color Scheme
 PRIMARY_COLOR = "#2C3E50"
 SECONDARY_COLOR = "#3498DB"
 SUCCESS_COLOR = "#27AE60"
@@ -61,15 +61,15 @@ class MicroTPCTGUI:
         self.matching_results = None
 
         # Input and output variables
-        self.proteome_path = tk.StringVar()
-        self.peptide_path = tk.StringVar()
-        self.output_dir = tk.StringVar()
-        self.algorithm = tk.StringVar(value=ALGORITHMS[0])
-        self.wildcard_enabled = tk.BooleanVar(value=True)
+        self.proteome_path = tk.StringVar() # Path to Proteome (Target) FASTA file
+        self.peptide_path = tk.StringVar() # Path to Peptide (Query) XLSX/CSV file
+        self.output_dir = tk.StringVar() # Path to output directory
+        self.algorithm = tk.StringVar(value=ALGORITHMS[0]) 
+        self.wildcard_enabled = tk.BooleanVar(value=True) # Default : enabled wildcard matching
         self.wildcard_choice = tk.StringVar(value="X")
-        self.save_excel = tk.BooleanVar(value=True)
+        self.save_excel = tk.BooleanVar(value=True) # Default : save as Excel
         self.save_csv = tk.BooleanVar(value=False)
-        self.include_timestamp = tk.BooleanVar(value=True)
+        self.include_timestamp = tk.BooleanVar(value=True) # Default : include timestamp in filename
         self.filename_custom = tk.StringVar(value="results") 
 
         # --- HEADER ---
@@ -81,7 +81,7 @@ class MicroTPCTGUI:
                                fg=LIGHT_TEXT, bg=PRIMARY_COLOR)
         title_label.pack(pady=10)
 
-        # --- LEFT COLUMN: Input Files ---
+        # --- LEFT COLUMN: Input Files & MicroTPCT logo ---
         left_frame = tk.Frame(root, bg=BG_COLOR)
         left_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
@@ -99,17 +99,17 @@ class MicroTPCTGUI:
         self._create_file_input(input_frame, "Output Directory", self.output_dir, 
                         self.browse_output, 2)
 
-        # --- Image display section (vide pour l'instant) ---
+        # --- Image display section ---
         image_frame = tk.LabelFrame(left_frame, text="", padx=15, pady=15,
                             font=("Helvetica", 11, "bold"),
                             fg=TEXT_COLOR, bg=BG_COLOR,
                             relief=tk.RIDGE, borderwidth=2)
         image_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-        # Exemple : placeholder pour l'image
+
+        # Placeholder for MicroTPCT logo or image
         placeholder_label = tk.Label(image_frame, text="Image will appear here",
                              font=("Helvetica", 10), bg=BG_COLOR, fg=TEXT_COLOR)
         placeholder_label.pack(expand=True, fill=tk.BOTH)
-
 
         # --- MIDDLE COLUMN: Algorithm, Configuration & Save Options ---
         middle_frame = tk.Frame(root, bg=BG_COLOR)
@@ -271,6 +271,7 @@ class MicroTPCTGUI:
         """
         self.output_dir.set(filedialog.askdirectory())
 
+
     def clear(self):
         """
         Clear all input fields and reset to default values.
@@ -326,7 +327,7 @@ class MicroTPCTGUI:
             self.status_label.config(text="Status: Processing...", fg="orange")
             self.root.update()
             
-            # Récupérer la clé correspondante à partir du nom affiché
+            # Get the key corresponding to the displayed name
             selected_display_name = self.algorithm_display.get()
             matching_engine_key = next(
                 key for key, name in ENGINE_NAMES.items() if name == selected_display_name
@@ -336,11 +337,11 @@ class MicroTPCTGUI:
                 target_file=Path(self.proteome_path.get()),
                 query_file=Path(self.peptide_path.get()),
                 output_path=Path(self.output_dir.get()),
-                matching_engine=matching_engine_key, #self.algorithm.get(),
+                matching_engine=matching_engine_key,
                 wildcards=self.wildcard_choice.get() if self.wildcard_enabled.get() else None,
             )
             if results is None:
-                messagebox.showinfo("Info", "Pipeline completed, results saved automatically")
+                messagebox.showinfo(f"Info", f"Pipeline completed, results saved automatically to {self.output_dir.get()}.")
             else:
                 self.matching_results = results
             
