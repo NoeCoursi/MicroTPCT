@@ -41,7 +41,7 @@ target_db = mini_pipeline(proteome_file_path, SequenceRole.PROTEIN)
 print(target_db.to_dataframe())
 
 
-from microtpct.core.match_find import run_find
+from microtpct.core.match import run_find
 
 matching_results = run_find(target_db, query_db)
 
@@ -59,7 +59,7 @@ print(matching_results.peptides_with_no_match(query_db.ids))
 # tests/minimal_pipeline.py
 from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.converters import build_database
-from microtpct.core.match_find import run_find
+from microtpct.core.match import run_find
 from pathlib import Path
 
 def minimal_pipeline_gui(fasta_path, peptide_path, output_path=None, algorithm="match_find", wildcard=None, config=None):

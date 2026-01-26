@@ -1,7 +1,6 @@
 #  run GUI application for MicroTPCT
 #  python3 src/microtpct/interfaces/gui.py
 
-# pip install pyyaml
 ### for Linux/WSL users who do not have tkinter installed:
 # sudo apt update
 # sudo apt install python3-tk
@@ -17,11 +16,6 @@ repo_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(repo_root))
 
 from tests.minimal_pipeline import minimal_pipeline_gui
-import yaml
-
-config_path = Path(__file__).parent.parent / "config" / "defaults.yaml"
-with open(config_path, 'r') as f:
-    config = yaml.safe_load(f)
 
 ALGORITHMS = ["boyer_moore", 
               "match_ahocorasick", 
@@ -175,7 +169,7 @@ class MicroTPCTGUI:
                            font=("Helvetica", 12, "bold"), padx=15, pady=15,
                            relief=tk.RAISED, bd=2, cursor="hand2",
                            activebackground="#1E8449")
-        self.run_btn.grid(row=0, column=0, sticky="nsew", pady=5)
+        self.run_btn.grid(row=0, column=0, sticky="ew", pady=5)
 
         self.save_btn = tk.Button(right_frame, text="Save Results", command=self.save_manually,
                              bg="#F39C12", fg=LIGHT_TEXT,
