@@ -25,7 +25,7 @@ jobs:
           pip install .
 
       - name: Build EXE
-        run: pyinstaller --onefile --windowed src/interfaces/GUI.py #--icon=my_icon.ico
+        run: pyinstaller --onefile --windowed src/microtpct/interfaces/GUI.py #--icon=my_icon.ico
 
       - uses: actions/upload-artifact@v4
         with:
@@ -50,7 +50,7 @@ jobs:
           pip install .
 
       - name: Build App
-        run: pyinstaller --onefile --windowed src/interfaces/GUI.py
+        run: pyinstaller --onefile --windowed src/microtpct/interfaces/GUI.py
 
       - uses: actions/upload-artifact@v4
         with:
@@ -80,7 +80,7 @@ jobs:
           pip install .
 
       - name: Build binary
-        run: pyinstaller --onefile src/interfaces/GUI.py
+        run: pyinstaller --onefile src/microtpct/interfaces/GUI.py
 
       - name: Prepare AppDir
         run: |
