@@ -9,14 +9,15 @@ description = "MicroTPCT: Microproteotypicity of Peptides Control Tool"
 
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies ["ahocorasick_rs",
-"Bio",
-"biopython",
-"microtpct",
-"microtpct.egg",
-"pandas",
-"pyahocorasick",
-"pybmoore",
+dependencies = [
+    "ahocorasick_rs",
+    "Bio",
+    "biopython",
+    "microtpct",
+    "microtpct.egg",
+    "pandas",
+    "pyahocorasick",
+    "pybmoore",
 ]
 
 [tool.setuptools.packages.find]
