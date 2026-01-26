@@ -2,7 +2,8 @@ import subprocess
 import tempfile
 import os
 import shutil as sh
-from typing import List
+from typing import List, Tuple, Literal, Dict
+from pathlib import Path
 
 from microtpct.core.databases import TargetDB, QueryDB
 from microtpct.core.results import Match, MatchResult
@@ -12,7 +13,7 @@ from microtpct.core.results import Match, MatchResult
 # sudo apt install ncbi-blast+
 
 
-def peptides_to_fasta(peptides: List[str], ids: List[str], out_path: str):
+def peptides_to_fasta(peptides: List[str], ids: List[str], out_path: str) -> None:
     """Write peptide sequences to FASTA using provided IDs as headers.
 
     Args:
@@ -30,7 +31,7 @@ def peptides_to_fasta(peptides: List[str], ids: List[str], out_path: str):
             qf.write(f">{pid}\n{pep}\n")
 
 
-def proteins_to_fasta(proteins: List[str], ids: List[str], out_path: str):
+def proteins_to_fasta(proteins: List[str], ids: List[str], out_path: str | Path) -> None:
     """Write protein sequences to FASTA using provided IDs as headers.
 
     Args:
@@ -48,7 +49,7 @@ def proteins_to_fasta(proteins: List[str], ids: List[str], out_path: str):
             pf.write(f">{tid}\n{seq}\n")
 
 
-def make_blast_db(proteome_file, db_prefix):
+def make_blast_db(proteome_file: str | Path, db_prefix: str) -> str:
     """Create a BLAST protein database from `proteome_file` with given prefix.
     Raises RuntimeError on failure with `makeblastdb` stderr attached.
     """
@@ -70,9 +71,6 @@ def make_blast_db(proteome_file, db_prefix):
         # print file path to debug
         raise RuntimeError(
             f"makeblastdb failed (rc={proc.returncode}): {proc.stderr.strip()}\n"
-            f"Proteome file path: {proteome_file}\n"
-            f"--- start of {proteome_file} (first 5 lines) ---\n{snippet}\n"
-            f"--- end of snippet ---"
         )
 
     return db_prefix
@@ -92,8 +90,6 @@ def parse_blast_output(blast_out: str) -> List[Match]:
         if line.startswith("#"):
             continue
         qseqid, sseqid, pident, alen, mismatch, gapopen, qlen, sstart, send = line.split()
-        #pat_idx = int(qseqid)
-        #pep = peptides[pat_idx]
         # Only accept full-length exact matches (pident 100 and alignment length == peptide length and 0 mismatches and 0 gap)
         try:
             if float(pident) != 100.0:

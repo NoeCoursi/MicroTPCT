@@ -43,7 +43,7 @@ def concatenate_prot(target_db: TargetDB) -> tuple:
 
     return "".join(big_chunks), pos_map
 
-def init_worker(big_text: str, pos_map: int):
+def init_worker(big_text: str, pos_map: int) -> None:
     """
     Initialize global variables for multiprocessing workers.
 

@@ -105,7 +105,7 @@ def _validate_amino_acid_sequence(
     return False
 
 
-def validates_wildcards(wildcards: set):
+def validates_wildcards(wildcards: set) -> None:
     overlapping = wildcards & AMINO_ACIDS
 
     if overlapping:

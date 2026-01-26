@@ -25,7 +25,7 @@ def generate_ids(prefix: str, n: int) -> list[str]:
 def build_database(
     inputs: Iterable[ProteinInput | PeptideInput],
     role: SequenceRole,
-):
+) -> TargetDB | QueryDB:
     """
     Convert validated SequenceInput objects into a SequenceDB.
 
