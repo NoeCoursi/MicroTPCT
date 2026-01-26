@@ -47,7 +47,7 @@ class PipelineRunner:
         self.target_input = Path(target_input)
         self.algo = algo
         self.wildcards = wildcards
-        self.output_path = Path(output).resolve() if output else self.query_input.parent.resolve()
+        self.output_path = output if output else Path.cwd().resolve()
         self.ext = ext
         self.log = log
         self.err = err
@@ -80,62 +80,85 @@ class PipelineRunner:
 
     def manage_output_path(self) -> None:
         ts = self._timestamp()
-        self.result_file = Path(self.output_path, f"microtpct_matching_result_{ts.strftime("%Y%m%d_%H%M%S")}.{self.ext}")
-        self.stats_file  = Path(self.output_path, f"microtpct_statistics_{ts.strftime("%Y%m%d_%H%M%S")}.{self.ext}")
+        self.result_file = self.output_path / f"microtpct_matching_result_{ts.strftime("%Y%m%d_%H%M%S")}.{self.ext}"
+        self.stats_file  = self.output_path / f"microtpct_statistics_{ts.strftime("%Y%m%d_%H%M%S")}.{self.ext}"
         return
 
     def format_wildcard(self) -> None:
-        self.wildcard_as_list = [w for w in self.wildcards]
-        self.wildcard_flag = True if self.wildcard_as_list else False
+
+        if len(self.wildcards) > 0 :
+            self.wildcard_flag = True
+            self.wildcards = [w for w in self.wildcards]
+        if len(self.wildcards) == 0 :
+            self.wildcard_flag = False
+            self.wildcards = ["X"]
     
     def format_output_format(self) -> None:
         self.ext = self.ext if self.ext else "csv"
 
+    def setup_logging(self, timestamp):
+        with ExitStack() as stack:
+            if self.log:
 
+                self.log_path = self.output_path / "microtpct_log"
+                self.log_path.mkdir(parents=True, exist_ok=True)
+
+                log_filename = f"microtpct_matching_result_{str(self.analyse_name) if self.analyse_name else ''}_{timestamp.strftime('%Y%m%d_%H%M%S')}.log"
+                self.log_file_path = self.log_path / log_filename
+
+                echo_info(f"Writing logs to {self.log_file_path}")
+                self.log_f = stack.enter_context(open(self.log_file_path, "w"))
+                stack.enter_context(redirect_stdout(self.log_f))
+
+            if self.err:
+                self.err_path = self.output_path / "microtpct_err"
+                self.err_path.mkdir(parents=True, exist_ok=True)
+
+                err_filename = f"microtpct_matching_result_{str(self.analyse_name) if self.analyse_name else ''}_{timestamp.strftime('%Y%m%d_%H%M%S')}.err"
+                self.err_file_path = self.err_path / err_filename
+                echo_info(f"Writing errors to {self.err_file_path}")
+                self.err_f = stack.enter_context(open(self.err_file_path, "w"))
+                stack.enter_context(redirect_stderr(self.err_f))
+
+    def manage_log_err(self):
+        if self.log:
+            self.log_path = self.output_path
+        if self.err:
+            self.err = self.output_path
 
 
     # Pipeline execution
     def launch_pipeline(self):
         """Print info and simulate pipeline execution"""
 
-        ts = self._timestamp()
+        self.timestamp = self._timestamp()
 
+        self.manage_output_path()
         self.format_wildcard()
         self.format_output_format()
-
-        with ExitStack() as stack:
-            if self.log:
-                log_foler_path = Path(self.output_path, "microTPCT_log")
-                log_foler_path.mkdir(parents=True, exist_ok=True)
-                log_path = log_foler_path / f"microtpct_matching_result_{str(self.analyse_name) if self.analyse_name else ""}_{ts.strftime('%Y%m%d_%H%M%S')}.log"
-
-                log_f = stack.enter_context(open(log_path, "w"))
-                stack.enter_context(redirect_stdout(log_f))
-
-            if self.err:
-                err_foler_path = Path(self.output_path, "microTPCT_err")
-                err_foler_path.mkdir(parents=True, exist_ok=True)
-                err_path = err_foler_path / f"microtpct_matching_result_{str(self.analyse_name) if self.analyse_name else ""}_{ts.strftime('%Y%m%d_%H%M%S')}.err"
-
-                err_f = stack.enter_context(open(err_path, "w"))
-                stack.enter_context(redirect_stderr(err_f))
+        self.manage_log_err()
+        #self.setup_logging(self.timestamp)
 
 
-            run_pipeline(
-                self.target_input, #target_file: PathLike,
-                self.query_input,  #query_file: PathLike,
-                self.tf,              #target_format: str | None = None,
-                self.qf,              #query_format: str | None = None,
-                self.ts,              #target_separator: str | None = None,
-                self.qs,              #query_separator: str | None = None,
-                self.output_path,  #output_path: PathLike | None = None,
-                self.ext,             #output_format: Literal["excel", "csv"] = "csv",
-                self.analyse_name,              #analysis_name: str | None = None,    
-                log_path,          #log_file: PathLike | None = None,    
-                self.wildcard_flag,              #allow_wildcard: bool = True,    
-                self.wildcards,    #wildcards: str | List[str] = "X",
-                self.algo)         #matching_engine: str = "aho",
-            exit(1)
+        click.echo("Running with:")
+
+
+        run_pipeline(
+            self.target_input, #target_file: PathLike,
+            self.query_input,  #query_file: PathLike,
+            target_format = self.tf,              #target_format: str | None = None,
+            query_format = self.qf,              #query_format: str | None = None,
+            target_separator = self.ts,              #target_separator: str | None = None,
+            query_separator = self.qs,              #query_separator: str | None = None,
+            output_path = self.output_path,  #output_path: PathLike | None = None,
+            output_format = self.ext,             #output_format: Literal["excel", "csv"] = "csv",
+            analysis_name = self.analyse_name,              #analysis_name: str | None = None,    
+            log_file = None,          #log_file: PathLike | None = None,    
+            allow_wildcard = self.wildcard_flag,              #allow_wildcard: bool = True,    
+            wildcards = self.wildcards,    #wildcards: str | List[str] = "X",
+            matching_engine = self.algo)         #matching_engine: str = "aho",
+            
+        exit(1)
 
 
     # Start (install dependencies)
