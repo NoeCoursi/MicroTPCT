@@ -92,6 +92,7 @@ jobs:
         run: |
           tar czf MicroTPCT-linux.tar.gz -C dist gui
 
+
       - name: Build .deb professional
         run: |
           mkdir -p deb/MicroTPCT/DEBIAN
@@ -130,6 +131,22 @@ jobs:
 
           # Build the .deb
           dpkg-deb --build deb/MicroTPCT MicroTPCT.deb
+
+
+      - name: Create AppImage metadata
+        run: |
+          # Desktop file
+          cat > AppDir/MicroTPCT.desktop << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=MicroTPCT
+          Exec=MicroTPCT
+          Icon=MicroTPCT
+          Categories=Utility;
+          EOF
+
+          # Copy real icon
+          cp assets/logoMu.png AppDir/MicroTPCT.png
 
       - name: Build AppImage
         run: |
