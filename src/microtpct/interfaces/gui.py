@@ -1,37 +1,18 @@
-#  run GUI application for MicroTPCT
-#  python3 src/microtpct/interfaces/gui.py
-
-### for Linux/WSL users who do not have tkinter installed:
-# sudo apt update
-# sudo apt install python3-tk
-
-from logging import root
-import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from pathlib import Path
 import threading
 from datetime import datetime
+from PIL import Image, ImageTk #Logo and image handling
 
-## to be replaced by a from microtpct import ... 
-if getattr(sys, "frozen", False):
-    # Running in PyInstaller bundle
-    repo_root = Path(sys.executable).parent
-else:
-    # Running as normal script
-    repo_root = Path(__file__).resolve().parents[3]
-
-sys.path.append(str(repo_root))
-
-from microtpct.core import results
 from microtpct.core.pipeline import run_pipeline
-from microtpct.core.match import list_available_engines, user_friendly_engine_name
+from microtpct.core.match import list_available_engines, user_friendly_mapped_engine_names
+
 
 ALGORITHMS = list_available_engines()
-
-# User-friendly mapping of algorithm keys to display names
-ENGINE_NAMES = {key: user_friendly_engine_name(key) for key in ALGORITHMS}
+ENGINE_NAMES = user_friendly_mapped_engine_names()
 ALGORITHMS_DISPLAY = list(ENGINE_NAMES.values())
+
 
 # Color Scheme
 PRIMARY_COLOR = "#2C3E50"
@@ -42,6 +23,7 @@ BG_COLOR = "#ECF0F1"
 TEXT_COLOR = "#2C3E50"
 LIGHT_TEXT = "#FFFFFF"
 
+# --- GUI ---
 class MicroTPCTGUI:
     """Main GUI class for the MicroTPCT peptide analysis pipeline."""
     
@@ -59,7 +41,6 @@ class MicroTPCTGUI:
         """
         self.root = root
         self.root.title("MicroTPCT")
-        #self.root.geometry("1000x600")
         self.root.configure(bg=BG_COLOR)
         self.root.minsize(900, 500)
 
@@ -106,16 +87,25 @@ class MicroTPCTGUI:
                         self.browse_output, 2)
 
         # --- Image display section ---
-        image_frame = tk.LabelFrame(left_frame, text="", padx=15, pady=15,
+        image_frame = tk.LabelFrame(left_frame, text="", padx=5, pady=5,
                             font=("Helvetica", 11, "bold"),
                             fg=TEXT_COLOR, bg=BG_COLOR,
-                            relief=tk.RIDGE, borderwidth=2)
-        image_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+                            relief=tk.RIDGE, borderwidth=0,
+                            width=200, height=150)
+        image_frame.pack(fill=tk.NONE, expand=False, pady=5)
 
-        # Placeholder for MicroTPCT logo or image
-        placeholder_label = tk.Label(image_frame, text="Image will appear here",
-                             font=("Helvetica", 10), bg=BG_COLOR, fg=TEXT_COLOR)
-        placeholder_label.pack(expand=True, fill=tk.BOTH)
+        self.logo_label = tk.Label(image_frame, bg=BG_COLOR)
+        self.logo_label.pack(fill=tk.BOTH, expand=True)
+
+        # Charger le logo PNG ici, après la création de left_frame
+        logo_path = "src/microtpct/interfaces/logo.png"
+        logo_img = Image.open(logo_path)
+
+        # Optionnel : créer l'image aux dimensions exactes de la frame pour éviter les resize dynamiques
+        logo_img = logo_img.resize((200, 150), Image.LANCZOS)
+
+        self.tk_logo = ImageTk.PhotoImage(logo_img)
+        self.logo_label.config(image=self.tk_logo)
 
         # --- MIDDLE COLUMN: Algorithm, Configuration & Save Options ---
         middle_frame = tk.Frame(root, bg=BG_COLOR)

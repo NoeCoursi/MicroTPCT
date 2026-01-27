@@ -1,7 +1,7 @@
 from pathlib import Path
 from enum import Enum
 from typing import Iterator, Optional, Dict, Sequence
-from microtpct.io.schema import ProteinInput, PeptideInput
+from microtpct.io.schema import TargetInput, QueryInput
 from microtpct.utils import setup_logger
 
 logger = setup_logger(__name__)
@@ -12,8 +12,8 @@ class SequenceRole(Enum):
     Class that define role of the readed sequence in a clean way.
     """
 
-    PROTEIN = "protein"
-    PEPTIDE = "peptide"
+    TARGET = "target"
+    QUERY = "query"
 
 
 # Base reader
@@ -45,7 +45,7 @@ class BaseReader:
 class FastaReader(BaseReader):
     """
     FASTA reader using Biopython SeqIO.
-    Produces ProteinInput or PeptideInput depending on the role.
+    Produces TargetInput or QueryInput depending on the role.
     """
 
     def read(self) -> Iterator:
@@ -73,11 +73,11 @@ class FastaReader(BaseReader):
         """
         accession = header.split("|")[1]
         sequence = sequence.strip().upper() # Normalization
-        if self.role == SequenceRole.PROTEIN:
-            return ProteinInput(accession=accession, sequence=sequence)
+        if self.role == SequenceRole.TARGET:
+            return TargetInput(accession=accession, sequence=sequence)
         
-        elif self.role == SequenceRole.PEPTIDE:
-            return PeptideInput(accession=accession, sequence=sequence)
+        elif self.role == SequenceRole.QUERY:
+            return QueryInput(accession=accession, sequence=sequence)
         
         else:
             logger.warning(f"Unknown role '{self.role}' for sequence {header}")
@@ -181,11 +181,11 @@ class AbstractPandasReader(BaseReader):
         """
         sequence = str(sequence).strip().upper()
 
-        if self.role == SequenceRole.PROTEIN:
-            return ProteinInput(accession=accession, sequence=sequence)
+        if self.role == SequenceRole.TARGET:
+            return TargetInput(accession=accession, sequence=sequence)
 
-        elif self.role == SequenceRole.PEPTIDE:
-            return PeptideInput(accession=accession, sequence=sequence)
+        elif self.role == SequenceRole.QUERY:
+            return QueryInput(accession=accession, sequence=sequence)
 
         else:
             logger.warning(f"Unknown role '{self.role}' for sequence {id}")
@@ -261,7 +261,7 @@ def read_file(
     file_path : str
         Path to the input file.
     role : SequenceRole
-        Role of the sequences (PROTEIN or PEPTIDE).
+        Role of the sequences (TARGET or QUERY).
     format : str, optional
         Input format ("fasta", "csv", "tsv", "xlsx").
         If None, deduced from file extension.
@@ -302,7 +302,7 @@ def read_file(
 
     elif format in ("csv", "tsv"):
         # Deduce separator from extension unless explicitly provided
-        if "sep" not in kwargs:
+        if "sep" not in kwargs or kwargs["sep"] is None:
             if ext == ".csv":
                 kwargs["sep"] = ","
             elif ext in (".tsv", ".txt"):
@@ -318,6 +318,7 @@ def read_file(
         reader = TabularReader(file_path, role, **kwargs)
 
     elif format == "xlsx":
+        kwargs.pop("sep", None) # No separator needed
         reader = XlsxReader(file_path, role, **kwargs)
 
     else:

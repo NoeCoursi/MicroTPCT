@@ -6,7 +6,7 @@ clean core biological sequence databases objects.
 """
 from typing import Iterable
 from microtpct.core.databases import TargetDB, QueryDB
-from microtpct.io.schema import ProteinInput, PeptideInput
+from microtpct.io.schema import TargetInput, QueryInput
 from microtpct.io.readers import SequenceRole
 
 
@@ -23,9 +23,9 @@ def generate_ids(prefix: str, n: int) -> list[str]:
     return [f"{prefix}{i+1:0{width}d}" for i in range(n)]
 
 def build_database(
-    inputs: Iterable[ProteinInput | PeptideInput],
+    inputs: Iterable[TargetInput | QueryInput],
     role: SequenceRole,
-):
+) -> TargetDB | QueryDB:
     """
     Convert validated SequenceInput objects into a SequenceDB.
 
@@ -50,7 +50,7 @@ def build_database(
     n = len(sequences)
 
     # Choose DB type and ID prefix
-    if role == SequenceRole.PROTEIN:
+    if role == SequenceRole.TARGET:
         ids = generate_ids("T", n)
         return TargetDB(
             ids=ids,
@@ -60,7 +60,7 @@ def build_database(
             wildcard_positions=wildcard_positions
         )
 
-    elif role == SequenceRole.PEPTIDE:
+    elif role == SequenceRole.QUERY:
         ids = generate_ids("Q", n)
         return QueryDB(
             ids=ids,

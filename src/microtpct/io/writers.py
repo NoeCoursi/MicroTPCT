@@ -328,9 +328,20 @@ def write_outputs(
 
     ext = "csv" if output_format == "csv" else "xlsx"
 
-    result_file = Path(output_path, f"microtpct_matching_result{f"_{analysis}" if analysis_name else ""}_{ts.strftime("%Y%m%d_%H%M%S")}.{ext}")
-    stats_file  = Path(output_path, f"microtpct_statistics{f"_{analysis}" if analysis_name else ""}_{ts.strftime("%Y%m%d_%H%M%S")}.{ext}")
+    #result_file = Path(output_path, f"microtpct_matching_result{f"_{analysis}" if analysis_name else ""}_{ts.strftime("%Y%m%d_%H%M%S")}.{ext}")
+    #stats_file  = Path(output_path, f"microtpct_statistics{f"_{analysis}" if analysis_name else ""}_{ts.strftime("%Y%m%d_%H%M%S")}.{ext}")
     
+    result_file = Path(
+        output_path,
+        f"microtpct_matching_result{'_' + analysis if analysis_name else ''}_{ts.strftime('%Y%m%d_%H%M%S')}.{ext}"
+        )
+
+    stats_file = Path(
+        output_path,
+        f"microtpct_statistics{'_' + analysis if analysis_name else ''}_{ts.strftime('%Y%m%d_%H%M%S')}.{ext}"
+        )
+
+
     # Build matching result into pd.Dataframe
     df_result = build_matching_result_table(query_db, target_db, result_strict, result_wildcard)
 

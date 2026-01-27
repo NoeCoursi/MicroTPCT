@@ -1,7 +1,7 @@
 """
 Validation utilities for MicroTPCT input schemas.
 
-This module validates SequenceInput, ProteinInput and PeptideInput
+This module validates SequenceInput, TargetInput and QueryInput
 objects before they are converted into core biological sequences.
 
 It enforces data completeness, formatting rules and basic
@@ -10,7 +10,7 @@ biological constraints.
 
 from typing import Optional, List
 
-from microtpct.io.schema import SequenceInput, ProteinInput, PeptideInput
+from microtpct.io.schema import SequenceInput, TargetInput, QueryInput
 from microtpct.utils import setup_logger
 
 # Biological constants 
@@ -32,21 +32,21 @@ def validate_sequence_input(seq: SequenceInput) -> None:
         raise TypeError("SequenceInput.sequence must be a string.")
 
 
-# Protein validation
+# Target validation
 
-def validate_protein_input(prot: ProteinInput, wildcards: Optional[set] = None) -> bool:
-    if type(prot) is not ProteinInput:
+def validate_target_input(prot: TargetInput, wildcards: Optional[set] = None) -> bool:
+    if type(prot) is not TargetInput:
         raise TypeError(
-            f"validate_protein_input() expects ProteinInput, got {type(prot).__name__}"
+            f"validate_target_input() expects TargetInput, got {type(prot).__name__}"
         )
 
     validate_sequence_input(prot)
 
     if not prot.accession:
-        raise ValueError("ProteinInput.accession cannot be empty.")
+        raise ValueError("TargetInput.accession cannot be empty.")
 
     if not isinstance(prot.accession, str):
-        raise TypeError("ProteinInput.accession must be a string.")
+        raise TypeError("TargetInput.accession must be a string.")
 
     # Returns True if wildcard detected, False otherwise
     return _validate_amino_acid_sequence(
@@ -56,21 +56,21 @@ def validate_protein_input(prot: ProteinInput, wildcards: Optional[set] = None) 
     )
 
 
-def validate_peptide_input(pep: PeptideInput) -> None:
-    if type(pep) is not PeptideInput:
+def validate_query_input(pep: QueryInput) -> None:
+    if type(pep) is not QueryInput:
         raise TypeError(
-            f"validate_peptide_input() expects PeptideInput, got {type(pep).__name__}"
+            f"validate_query_input() expects QueryInput, got {type(pep).__name__}"
         )
 
     validate_sequence_input(pep)
 
     if not pep.accession:
-        raise ValueError("PeptideInput.accession cannot be empty.")
+        raise ValueError("QueryInput.accession cannot be empty.")
 
     if not isinstance(pep.accession, str):
-        raise TypeError("PeptideInput.accession must be a string.")
+        raise TypeError("QueryInput.accession must be a string.")
 
-    # Peptides never allow wildcards → strict validation
+    # Querys never allow wildcards → strict validation
     _validate_amino_acid_sequence(
         pep.sequence,
         obj_id=f"{pep.accession} (sequence: {pep.sequence})"
@@ -105,7 +105,7 @@ def _validate_amino_acid_sequence(
     return False
 
 
-def validates_wildcards(wildcards: set):
+def validates_wildcards(wildcards: set) -> None:
     overlapping = wildcards & AMINO_ACIDS
 
     if overlapping:

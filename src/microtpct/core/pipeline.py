@@ -7,20 +7,21 @@ This module orchestrates the full workflow:
 This pipeline is interface-agnostic.
 """
 
+from asyncio.log import logger
 from pathlib import Path
-from typing import List, Literal
+from typing import Literal, List, Dict
 
 from microtpct.io.readers import read_file, SequenceRole
-from microtpct.io.validators import validate_protein_input, validate_peptide_input, validates_wildcards
+from microtpct.io.validators import validate_target_input, validate_query_input, validates_wildcards
 from microtpct.io.converters import build_database
 from microtpct.core.databases import TargetDB
 
 
-from microtpct.core.match import MATCHING_ENGINES, run_find, run_ahocorasick
+from microtpct.core.match import get_engine
 from microtpct.core.match.wildcards_matcher import run_wildcard_match
 
 from microtpct.io.writers import write_outputs
-from microtpct.utils.logging import setup_logger
+from microtpct.utils.logger import setup_logger
 
 
 PathLike = str | Path
@@ -36,6 +37,8 @@ def run_pipeline(
     query_format: str | None = None,
     target_separator: str | None = None,
     query_separator: str | None = None,
+    target_columns: Dict[str, str] | None = None,
+    query_columns: Dict[str, str] | None = None,
 
     output_path: PathLike | None = None,
     output_format: Literal["excel", "csv"] = "csv",
@@ -56,17 +59,30 @@ def run_pipeline(
 
     logger = setup_logger(__name__, log_file=log_file)
 
-    logger.info(f"Starting MicroTPCT pipeline {f"for analysis: {analysis_name}" if analysis_name else ""}")
+    logger.info(
+    f"Starting MicroTPCT pipeline"
+    f"{' for analysis: ' + analysis_name if analysis_name else ''}"
+)
 
     # Read inputs
     logger.info(f"Reading target file: {target_file}")
     target_inputs = list(
-        read_file(target_file, role=SequenceRole.PROTEIN, format=target_format) #, sep=target_separator) + colomn
+        read_file(target_file, 
+                  role=SequenceRole.TARGET, 
+                  format=target_format, 
+                  sep = target_separator,
+                  columns = target_columns
+                  )
     )
 
     logger.info(f"Reading query file: {query_file}")
     query_inputs = list(
-        read_file(query_file, role=SequenceRole.PEPTIDE, format=query_format)#, sep=query_separator)
+        read_file(query_file, 
+                  role=SequenceRole.QUERY, 
+                  format=query_format, 
+                  sep = query_separator,
+                  columns = query_columns
+                  )
     )
 
     logger.info(f"Loaded {len(target_inputs)} target sequences")
@@ -93,11 +109,11 @@ def run_pipeline(
 
     logger.info("Validating target inputs")
 
-    # Validate protein input and return True if object contain wildcards
+    # Validate target input and return True if object contain wildcards
     n_with_wildcards = 0
 
     for obj in target_inputs:
-        wildcards_detected = validate_protein_input(obj, wildcards)
+        wildcards_detected = validate_target_input(obj, wildcards)
 
         if wildcards_detected:
             n_with_wildcards += 1
@@ -127,7 +143,7 @@ def run_pipeline(
 
     logger.info("Validating query inputs")
     for obj in query_inputs:
-        validate_peptide_input(obj)
+        validate_query_input(obj)
 
     logger.info("All inputs are valid")
     
@@ -135,13 +151,13 @@ def run_pipeline(
     # Build databases
 
     logger.info("Building target database")
-    target_db = build_database(target_inputs, role=SequenceRole.PROTEIN)
+    target_db = build_database(target_inputs, role=SequenceRole.TARGET)
 
     if effective_allow_wildcard: # Add special attribute and method if wildcard search enable
         _inject_wildcard_metadata(target_db, target_inputs)
 
     logger.info("Building query database")
-    query_db = build_database(query_inputs, role=SequenceRole.PEPTIDE)
+    query_db = build_database(query_inputs, role=SequenceRole.QUERY)
 
     logger.info(
         f"TargetDB: {target_db.size} sequences "
@@ -157,12 +173,15 @@ def run_pipeline(
 
     # Strict matching (ignore wildcard)
     try:
-        matching_func = MATCHING_ENGINES[matching_engine]
-    except KeyError:
-        raise ValueError(f"Unsupported matching engine: '{matching_engine}'")
+        matching_func = get_engine(matching_engine)
+    except ValueError as e:
+        logger.error(str(e))
+        raise
 
     # Execute the engine
-    logger.info(f"Running matching engine: {matching_engine} {"+ wildcards match" if effective_allow_wildcard else ""}")
+    suffix = " + wildcard match" if effective_allow_wildcard else ""
+    logger.info(f"Running matching engine: {matching_engine}{suffix}")
+    
     result_strict_matching = matching_func(target_db, query_db)
 
     total_n_matches = result_strict_matching.__len__() # Store number of matches

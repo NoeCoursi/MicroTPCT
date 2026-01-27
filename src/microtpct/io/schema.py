@@ -22,15 +22,15 @@ class SequenceInput:
 
 
 @dataclass(frozen=True) # Frozen to prevent sequence modification (~ read only)
-class ProteinInput(SequenceInput):
-    """Contract for a protein input."""
+class TargetInput(SequenceInput):
+    """Contract for a target input."""
     
     accession: str
     wildcard_positions: list[int] = field(default_factory=list, repr=False)  # Positions of wildcards in the sequence
 
 
 @dataclass(frozen=True)
-class PeptideInput(ProteinInput):
-    """Contract for a peptide input."""
+class QueryInput(TargetInput):
+    """Contract for a query input."""
     
     pass

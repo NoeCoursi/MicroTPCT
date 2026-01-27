@@ -1,9 +1,6 @@
-import sys
 import pybmoore  # type: ignore
-import pandas as pd
-
+from typing import List
 from multiprocessing import Pool, cpu_count
-from Bio import SeqIO  # type: ignore
 
 from microtpct.core.databases import TargetDB, QueryDB
 from microtpct.core.results import Match, MatchResult
@@ -43,7 +40,7 @@ def concatenate_prot(target_db: TargetDB) -> tuple:
 
     return "".join(big_chunks), pos_map
 
-def init_worker(big_text: str, pos_map: int):
+def init_worker(big_text: str, pos_map: int) -> None:
     """
     Initialize global variables for multiprocessing workers.
 
@@ -103,7 +100,7 @@ def run_boyer_moore(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
     big_text, pos_map = concatenate_prot(target_db)
     queries = [(t_id, str(t_seq)) for t_id, t_seq in zip(query_db.ids, query_db.ambiguous_il_sequences)]
 
-
+    matches: List[Match] = []
     # Perform parallel search using multiprocessing
     with Pool(
         processes=cpu_count(),
@@ -111,7 +108,18 @@ def run_boyer_moore(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
         initargs=(big_text, pos_map),
     ) as pool:
         all_results = pool.map(process_query, queries)
-    print(all_results)
 
-    return
+    # formats results to be return as a Match object
+    for q_id, hits in all_results:
+        for t_id, start in hits:
+            matches.append(
+                Match(
+                    query_id=q_id,
+                    target_id=t_id,
+                    position=start
+                )
+            )
+
+    return MatchResult(matches=matches)
+
 
