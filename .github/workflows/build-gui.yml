@@ -25,7 +25,7 @@ jobs:
           pip install .
 
       - name: Build EXE
-        run: pyinstaller --onefile --windowed src/microtpct/interfaces/gui.py #--icon=my_icon.ico
+        run: pyinstaller --onefile --windowed --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
 
       - uses: actions/upload-artifact@v4
         with:
@@ -50,7 +50,7 @@ jobs:
           pip install .
 
       - name: Build App
-        run: pyinstaller --onefile --windowed src/microtpct/interfaces/gui.py
+        run: pyinstaller --onefile --windowed --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
 
       - uses: actions/upload-artifact@v4
         with:
@@ -66,7 +66,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12"
 
       - name: Install system tools
         run: |
@@ -80,7 +80,7 @@ jobs:
           pip install .
 
       - name: Build binary
-        run: pyinstaller --onefile src/microtpct/interfaces/gui.py
+        run: pyinstaller --onefile --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
 
       - name: Prepare AppDir
         run: |
@@ -110,6 +110,7 @@ jobs:
 
       - name: Create AppImage metadata
         run: |
+          # Desktop file
           cat > AppDir/MicroTPCT.desktop << 'EOF'
           [Desktop Entry]
           Type=Application
@@ -119,9 +120,8 @@ jobs:
           Categories=Utility;
           EOF
 
-          # Create a dummy icon (on remplacera plus tard par la vraie)
-          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-          convert -size 256x256 xc:lightblue AppDir/usr/share/icons/hicolor/256x256/apps/MicroTPCT.png || true
+          # Copy real icon
+          cp assets/logoMu.png AppDir/MicroTPCT.png
 
       - name: Build AppImage
         run: |
