@@ -1,5 +1,8 @@
 name: Build GUI executables
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
