@@ -42,7 +42,7 @@ class MicroTPCTGUI:
         self.root = root
         self.root.title("MicroTPCT")
         self.root.configure(bg=BG_COLOR)
-        self.root.minsize(900, 500)
+        self.root.minsize(900, 400)
 
         # Store matching results for saving
         self.matching_results = None
@@ -63,7 +63,7 @@ class MicroTPCTGUI:
         header_frame = tk.Frame(root, bg=PRIMARY_COLOR, height=60)
         header_frame.grid(row=0, column=0, columnspan=3, sticky="ew", padx=0, pady=0)
         
-        title_label = tk.Label(header_frame, text="MicroTPCT Pipeline", 
+        title_label = tk.Label(header_frame, text="MicroTPCT", 
                                font=("Helvetica", 24, "bold"), 
                                fg=LIGHT_TEXT, bg=PRIMARY_COLOR)
         title_label.pack(pady=10)
@@ -97,12 +97,11 @@ class MicroTPCTGUI:
         self.logo_label = tk.Label(image_frame, bg=BG_COLOR)
         self.logo_label.pack(fill=tk.BOTH, expand=True)
 
-        # Charger le logo PNG ici, après la création de left_frame
+        # Load PNG logo
         logo_path = "src/microtpct/interfaces/logo.png"
         logo_img = Image.open(logo_path)
 
-        # Optionnel : créer l'image aux dimensions exactes de la frame pour éviter les resize dynamiques
-        logo_img = logo_img.resize((200, 200), Image.LANCZOS)
+        logo_img = logo_img.resize((270, 270), Image.LANCZOS)
 
         self.tk_logo = ImageTk.PhotoImage(logo_img)
         self.logo_label.config(image=self.tk_logo)
