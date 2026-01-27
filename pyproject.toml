@@ -4,7 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "microtpct"
-packages = ["microtpct"]
 version = "0.0.1-dev"
 description = "MicroTPCT: Microproteotypicity of Peptides Control Tool"
 
