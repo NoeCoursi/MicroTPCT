@@ -2,6 +2,8 @@
 """
 CLI launcher for the project microTPCT
 Author: Basile Bergeron, Meredith Biteau, Ambre Bordas, Noé Cursimaux, Ambroise Loeb
+This module defines the CLI options, input validation, and execution
+logic for running the microTPCT matching pipeline.
 """
 
 import click,  subprocess, sys #type: ignore
@@ -9,7 +11,6 @@ import click,  subprocess, sys #type: ignore
 from datetime import datetime
 from typing import List, Tuple, Literal, Dict
 from pathlib import Path
-from contextlib import redirect_stdout, redirect_stderr, ExitStack
 from yaspin import yaspin #type: ignore
 from yaspin.spinners import Spinners #type: ignore
 
@@ -22,7 +23,7 @@ def echo_info(msg: str):
 def echo_error(msg: str):
     click.echo(f"[ERROR] {msg}", err=True)
 
-# Core Pipeline class
+# Pipeline execution wrapper
 class PipelineRunner:
     WILDCARD_CHOICES = ["B", "X", "Z", "J", "U", "O", "-", ".", "?"]
 
@@ -42,6 +43,34 @@ class PipelineRunner:
         qs=None,
         name=""
     ):
+        """
+        Initialize a PipelineRunner instance.
+
+        Parameters
+        ----------
+        query_input : str or Path
+            Path to the query input file.
+        target_input : str or Path
+            Path to the target input file.
+        algo : str
+            Matching algorithm to use.
+        wildcards : tuple
+            Allowed wildcard characters.
+        output : Path or None
+            Output directory.
+        log : bool
+            Enable logging of stdout.
+        err : bool
+            Enable logging of stderr.
+        ext : str
+            Output file extension.
+        tf, qf : str or None
+            Target and query input formats.
+        ts, qs : str or None
+            Target and query field separators.
+        name : str
+            Analysis name.
+        """
         self.query_input = Path(query_input)
         self.target_input = Path(target_input)
         self.algo = algo
@@ -59,6 +88,14 @@ class PipelineRunner:
     # Validation
     @staticmethod
     def validate_input_file(file_path: str | Path) -> str | Path:
+        """
+        Validate that the given path exists and is a file.
+
+        Raises
+        ------
+        click.BadParameter
+            If the file does not exist or is not a file.
+        """
         path = Path(file_path)
         if not path.exists():
             raise click.BadParameter(f"File not found: {file_path}")
@@ -68,6 +105,24 @@ class PipelineRunner:
 
     @staticmethod
     def validate_algo_flags(algo_flags: List[Tuple[str, bool]]) -> str:
+        """
+        Ensure that at most one algorithm flag is selected.
+
+        Parameters
+        ----------
+        algo_flags : list of (str, bool)
+            Algorithm names with activation flags.
+
+        Returns
+        -------
+        str
+            Selected algorithm name.
+
+        Raises
+        ------
+        click.UsageError
+            If more than one algorithm is selected.
+        """
         selected = [name for name, active in algo_flags if active]
         if len(selected) > 1:
             raise click.UsageError("Please select only one algorithm")
@@ -84,24 +139,29 @@ class PipelineRunner:
         return
 
     def format_wildcard(self) -> None:
+        """
+        Normalize wildcard configuration.
 
-        if len(self.wildcards) > 0 :
-            self.wildcard_flag = True
-            self.wildcards = [w for w in self.wildcards]
-        if len(self.wildcards) == 0 :
-            self.wildcard_flag = False
-            self.wildcards = ["X"]
+        Enables wildcard processing if at least one wildcard is provided.
+        Defaults to 'X' if no wildcard is specified.
+        """
+
+        self.wildcard_flag = bool(self.wildcards)
+        self.wildcards = list(self.wildcards) if self.wildcard_flag else ["X"]
     
     def format_output_format(self) -> None:
+        """Ensure a valid output file extension is defined."""
         self.ext = self.ext if self.ext else "csv"
 
     def log_managment(self) -> None :
+        """Configure log output path if logging is enabled."""
         if self.log:
             self.log_path = self.output_path
         else :
             self.log_path = None
     
     def err_managment(self) -> None :
+        """Configure error output path if error logging is enabled."""
         if self.err:
             self.err_path = self.output_path
         else :
@@ -110,7 +170,9 @@ class PipelineRunner:
 
     # Pipeline execution
     def launch_pipeline(self):
-        """Print info and run pipeline execution"""
+        """
+        Prepare configuration and execute the microTPCT pipeline.
+        """
 
         self.timestamp = self._timestamp()
 
@@ -158,6 +220,12 @@ class PipelineRunner:
     # Start (install dependencies)
     @staticmethod
     def start(requirements_file: Path | None = None):
+        """
+        Install project dependencies from the requirements file.
+
+        This method is intended to be used via the --start CLI option.
+        """
+
         requirements_file = Path(__file__).resolve().parent.parent.parent.parent / "requirements.txt"
         print("Installing dependencies from:", requirements_file)
         with yaspin(Spinners.dots, text="Installing dependencies...") as spinner:
