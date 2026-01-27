@@ -28,7 +28,7 @@ jobs:
           pip install .
 
       - name: Build EXE
-        run: pyinstaller --onefile --windowed --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
+        run: pyinstaller --onefile --windowed --name MicroTPCT --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
 
       - uses: actions/upload-artifact@v4
         with:
@@ -63,7 +63,7 @@ jobs:
           pip install .
 
       - name: Build App
-        run: pyinstaller --onefile --windowed --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
+        run: pyinstaller --onefile --windowed --name MicroTPCT --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
 
       - uses: actions/upload-artifact@v4
         with:
@@ -104,17 +104,17 @@ jobs:
           pip install .
 
       - name: Build binary
-        run: pyinstaller --onefile --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
+        run: pyinstaller --onefile --name MicroTPCT --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
 
       - name: Prepare AppDir
         run: |
           mkdir -p AppDir/usr/bin
-          cp dist/gui AppDir/usr/bin/MicroTPCT
+          cp dist/MicroTPCT AppDir/usr/bin/MicroTPCT
           chmod +x AppDir/usr/bin/MicroTPCT
 
       - name: Build tar.gz
         run: |
-          tar czf MicroTPCT-linux.tar.gz -C dist gui
+          tar czf MicroTPCT-linux.tar.gz -C dist MicroTPCT
 
 
       - name: Build .deb professional
@@ -125,7 +125,7 @@ jobs:
           mkdir -p deb/MicroTPCT/usr/share/icons/hicolor/256x256/apps
 
           # Copy the PyInstaller binary
-          cp dist/gui deb/MicroTPCT/usr/bin/MicroTPCT
+          cp dist/MicroTPCT deb/MicroTPCT/usr/bin/MicroTPCT
 
           # Copy icon
           cp assets/logoMu.png deb/MicroTPCT/usr/share/icons/hicolor/256x256/apps/MicroTPCT.png
