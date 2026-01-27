@@ -100,7 +100,7 @@ jobs:
           mkdir -p deb/MicroTPCT/usr/share/icons/hicolor/256x256/apps
 
           # Copy the PyInstaller binary
-          cp dist/GUI deb/MicroTPCT/usr/bin/MicroTPCT
+          cp dist/gui deb/MicroTPCT/usr/bin/MicroTPCT
 
           # Copy icon
           cp assets/logoMu.png deb/MicroTPCT/usr/share/icons/hicolor/256x256/apps/MicroTPCT.png
@@ -125,8 +125,7 @@ jobs:
           Priority: optional
           Architecture: amd64
           Maintainer: Noe <noe@example.com>
-          Description: MicroTPCT GUI application
-           A simple GUI tool.
+          Description: MicroTPCT GUI application.
           EOF
 
           # Build the .deb
