@@ -92,36 +92,45 @@ jobs:
         run: |
           tar czf MicroTPCT-linux.tar.gz -C dist gui
 
-      - name: Build .deb
+      - name: Build .deb professional
         run: |
-          mkdir -p deb/MicroTPCT/usr/bin
-          cp dist/gui deb/MicroTPCT/usr/bin/MicroTPCT
-
           mkdir -p deb/MicroTPCT/DEBIAN
-          echo "Package: microtpct
+          mkdir -p deb/MicroTPCT/usr/bin
+          mkdir -p deb/MicroTPCT/usr/share/applications
+          mkdir -p deb/MicroTPCT/usr/share/icons/hicolor/256x256/apps
+
+          # Copy the PyInstaller binary
+          cp dist/GUI deb/MicroTPCT/usr/bin/MicroTPCT
+
+          # Copy icon
+          cp assets/logoMu.png deb/MicroTPCT/usr/share/icons/hicolor/256x256/apps/MicroTPCT.png
+
+          # Desktop file
+          cat > deb/MicroTPCT/usr/share/applications/microtpct.desktop << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=MicroTPCT
+          Comment=MicroTPCT GUI application
+          Exec=MicroTPCT
+          Icon=MicroTPCT
+          Terminal=false
+          Categories=Utility;
+          EOF
+
+          # Control file
+          cat > deb/MicroTPCT/DEBIAN/control << 'EOF'
+          Package: microtpct
           Version: 1.0
           Section: utils
           Priority: optional
           Architecture: amd64
-          Maintainer: Noe
-          Description: MicroTPCT gui" > deb/MicroTPCT/DEBIAN/control
-
-          dpkg-deb --build deb/MicroTPCT MicroTPCT.deb
-
-      - name: Create AppImage metadata
-        run: |
-          # Desktop file
-          cat > AppDir/MicroTPCT.desktop << 'EOF'
-          [Desktop Entry]
-          Type=Application
-          Name=MicroTPCT
-          Exec=MicroTPCT
-          Icon=MicroTPCT
-          Categories=Utility;
+          Maintainer: Noe <noe@example.com>
+          Description: MicroTPCT GUI application
+           A simple GUI tool.
           EOF
 
-          # Copy real icon
-          cp assets/logoMu.png AppDir/MicroTPCT.png
+          # Build the .deb
+          dpkg-deb --build deb/MicroTPCT MicroTPCT.deb
 
       - name: Build AppImage
         run: |

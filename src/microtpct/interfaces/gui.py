@@ -6,7 +6,6 @@
 # sudo apt install python3-tk
 
 from logging import root
-from logging import root
 import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
