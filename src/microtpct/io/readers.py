@@ -318,6 +318,7 @@ def read_file(
         reader = TabularReader(file_path, role, **kwargs)
 
     elif format == "xlsx":
+        kwargs.pop("sep", None) # No separator needed
         reader = XlsxReader(file_path, role, **kwargs)
 
     else:

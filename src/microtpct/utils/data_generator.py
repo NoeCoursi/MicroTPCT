@@ -416,8 +416,8 @@ def generate_benchmark_databases(
     if export_query_xlsx_path:
         export_query_xlsx(all_peptides, export_query_xlsx_path)
 
-    target_db = build_database(proteins, SequenceRole.PROTEIN)
-    query_db = build_database(all_peptides, SequenceRole.PEPTIDE)
+    target_db = build_database(proteins, SequenceRole.TARGET)
+    query_db = build_database(all_peptides, SequenceRole.QUERY)
 
     if save_config_path:
         with open(save_config_path, "w") as f:
