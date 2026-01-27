@@ -1,7 +1,7 @@
 """
 Sequence registries for MicroTPCT.
 
-This file provides simple in-memory databases for ProteinSequence and
+This file provides simple in-memory databases for TargetSequence and
 PeptideSequence objects. It allows grouping, indexing, and querying
 sequences by accession or other criteria.
 """

@@ -18,12 +18,9 @@ MATCHING_ENGINES = {
 }
 
 
-__all__ = ["MATCHING_ENGINES"]
-
-def list_available_engines():
+def list_available_engines() -> list[str]:
     """Return the list of available matching engine names."""
     return sorted(MATCHING_ENGINES.keys())
-
 
 def user_friendly_engine_name(engine_key: str) -> str:
     """Convert engine key to a more user-friendly name."""
