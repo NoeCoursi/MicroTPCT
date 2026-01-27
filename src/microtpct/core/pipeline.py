@@ -8,7 +8,7 @@ This pipeline is interface-agnostic.
 """
 
 from pathlib import Path
-from typing import List, Literal
+from typing import Literal, List, Dict
 
 from microtpct.io.readers import read_file, SequenceRole
 from microtpct.io.validators import validate_target_input, validate_query_input, validates_wildcards
@@ -36,6 +36,8 @@ def run_pipeline(
     query_format: str | None = None,
     target_separator: str | None = None,
     query_separator: str | None = None,
+    target_columns: Dict[str, str] | None = None,
+    query_columns: Dict[str, str] | None = None,
 
     output_path: PathLike | None = None,
     output_format: Literal["excel", "csv"] = "csv",
@@ -61,12 +63,22 @@ def run_pipeline(
     # Read inputs
     logger.info(f"Reading target file: {target_file}")
     target_inputs = list(
-        read_file(target_file, role=SequenceRole.TARGET, format=target_format) #, sep=target_separator) + colomn
+        read_file(target_file, 
+                  role=SequenceRole.TARGET, 
+                  format=target_format, 
+                  sep = target_separator,
+                  columns = target_columns
+                  )
     )
 
     logger.info(f"Reading query file: {query_file}")
     query_inputs = list(
-        read_file(query_file, role=SequenceRole.QUERY, format=query_format)#, sep=query_separator)
+        read_file(query_file, 
+                  role=SequenceRole.QUERY, 
+                  format=query_format, 
+                  sep = query_separator,
+                  columns = query_columns
+                  )
     )
 
     logger.info(f"Loaded {len(target_inputs)} target sequences")

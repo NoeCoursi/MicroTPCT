@@ -302,7 +302,7 @@ def read_file(
 
     elif format in ("csv", "tsv"):
         # Deduce separator from extension unless explicitly provided
-        if "sep" not in kwargs:
+        if "sep" not in kwargs or kwargs["sep"] is None:
             if ext == ".csv":
                 kwargs["sep"] = ","
             elif ext in (".tsv", ".txt"):
