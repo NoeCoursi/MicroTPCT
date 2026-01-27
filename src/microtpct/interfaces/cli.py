@@ -26,7 +26,6 @@ def echo_error(msg: str):
 class PipelineRunner:
     WILDCARD_CHOICES = ["B", "X", "Z", "J", "U", "O", "-", ".", "?"]
 
-
     def __init__(
         self,
         query_input,
@@ -34,8 +33,8 @@ class PipelineRunner:
         algo="aho",
         wildcards=(),
         output=None,
-        log=False,
-        err=False,
+        log=None,
+        err=None,
         ext="csv",
         tf=None,
         qf=None,
@@ -96,70 +95,65 @@ class PipelineRunner:
     def format_output_format(self) -> None:
         self.ext = self.ext if self.ext else "csv"
 
-    def setup_logging(self, timestamp):
-        with ExitStack() as stack:
-            if self.log:
-
-                self.log_path = self.output_path / "microtpct_log"
-                self.log_path.mkdir(parents=True, exist_ok=True)
-
-                log_filename = f"microtpct_matching_result_{str(self.analyse_name) if self.analyse_name else ''}_{timestamp.strftime('%Y%m%d_%H%M%S')}.log"
-                self.log_file_path = self.log_path / log_filename
-
-                echo_info(f"Writing logs to {self.log_file_path}")
-                self.log_f = stack.enter_context(open(self.log_file_path, "w"))
-                stack.enter_context(redirect_stdout(self.log_f))
-
-            if self.err:
-                self.err_path = self.output_path / "microtpct_err"
-                self.err_path.mkdir(parents=True, exist_ok=True)
-
-                err_filename = f"microtpct_matching_result_{str(self.analyse_name) if self.analyse_name else ''}_{timestamp.strftime('%Y%m%d_%H%M%S')}.err"
-                self.err_file_path = self.err_path / err_filename
-                echo_info(f"Writing errors to {self.err_file_path}")
-                self.err_f = stack.enter_context(open(self.err_file_path, "w"))
-                stack.enter_context(redirect_stderr(self.err_f))
-
-    def manage_log_err(self):
+    def log_managment(self) -> None :
         if self.log:
             self.log_path = self.output_path
+        else :
+            self.log_path = None
+    
+    def err_managment(self) -> None :
         if self.err:
-            self.err = self.output_path
+            self.err_path = self.output_path
+        else :
+            self.err_path = None
 
 
     # Pipeline execution
     def launch_pipeline(self):
-        """Print info and simulate pipeline execution"""
+        """Print info and run pipeline execution"""
 
         self.timestamp = self._timestamp()
 
+        # Formats input
         self.manage_output_path()
-        self.format_wildcard()
         self.format_output_format()
-        self.manage_log_err()
-        #self.setup_logging(self.timestamp)
+        self.format_wildcard()
 
+        self.log_managment()
+        self.err_managment()
 
-        click.echo("Running with:")
-
+        
+        echo_info(
+            f" Target_input        :{self.target_input}\n\t"
+            f"Query_input         :{self.query_input}\n\t"
+            f"Target format       :{self.tf}\n\t"
+            f"Query format        :{self.qf}\n\t"
+            f"Target separator    :{self.ts}\n\t"
+            f"Query separato      :{self.qs}\n\t"
+            f"output_path         :{self.output_path}\n\t"
+            f"Output format       :{self.ext}\n\t"
+            f"Analyse name        :{self.analyse_name}\n\t"
+            f"log_path            :{self.log_path}\n\t"
+            f"err_path            :{self.err_path}\n\t"
+            f"wildcard_flag       :{self.wildcard_flag}\n\t"
+            f"wildcards           :{self.wildcards}\n\t"
+            f"Matching engine     :{self.algo}\n\n")
 
         run_pipeline(
-            self.target_input, #target_file: PathLike,
-            self.query_input,  #query_file: PathLike,
-            target_format = self.tf,              #target_format: str | None = None,
-            query_format = self.qf,              #query_format: str | None = None,
-            target_separator = self.ts,              #target_separator: str | None = None,
-            query_separator = self.qs,              #query_separator: str | None = None,
-            output_path = self.output_path,  #output_path: PathLike | None = None,
-            output_format = self.ext,             #output_format: Literal["excel", "csv"] = "csv",
-            analysis_name = self.analyse_name,              #analysis_name: str | None = None,    
-            log_file = None,          #log_file: PathLike | None = None,    
-            allow_wildcard = self.wildcard_flag,              #allow_wildcard: bool = True,    
-            wildcards = self.wildcards,    #wildcards: str | List[str] = "X",
-            matching_engine = self.algo)         #matching_engine: str = "aho",
-            
-        exit(1)
-
+            self.target_input,
+            self.query_input,
+            target_format = self.tf,
+            query_format = self.qf,
+            target_separator = self.ts,
+            query_separator = self.qs,
+            output_path = self.output_path,
+            output_format = self.ext,
+            analysis_name = self.analyse_name,
+            log_file =  self.log_path, 
+            allow_wildcard = self.wildcard_flag,
+            wildcards = self.wildcards,
+            matching_engine = self.algo
+        )
 
     # Start (install dependencies)
     @staticmethod
@@ -177,6 +171,8 @@ class PipelineRunner:
                 spinner.fail("Error while installing dependencies")
                 echo_error(f"Failed to install dependencies: {e}")
                 sys.exit(1)
+
+
 
 # called start_callback and usage_callback called before cli
 # if --start or --usage are parsed
@@ -218,6 +214,9 @@ def usage_callback(ctx: click.Context, param: click.Parameter, value):
     else:
         click.echo("USAGE.txt not found!")
     ctx.exit(0)
+
+
+
 
 
 
