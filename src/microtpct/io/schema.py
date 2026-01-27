@@ -22,14 +22,14 @@ class SequenceInput:
 
 
 @dataclass(frozen=True) # Frozen to prevent sequence modification (~ read only)
-class ProteinInput(SequenceInput):
-    """Contract for a protein input."""
+class TargetInput(SequenceInput):
+    """Contract for a target input."""
     
     accession: str
 
 
 @dataclass(frozen=True)
-class PeptideInput(ProteinInput):
-    """Contract for a peptide input."""
+class QueryInput(TargetInput):
+    """Contract for a query input."""
     
     pass
