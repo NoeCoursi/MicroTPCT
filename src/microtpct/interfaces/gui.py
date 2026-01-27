@@ -1,35 +1,18 @@
-#  run GUI application for MicroTPCT
-#  python3 src/microtpct/interfaces/gui.py
-
-### for Linux/WSL users who do not have tkinter installed:
-# sudo apt update
-# sudo apt install python3-tk
-
-from logging import root
-from logging import root
-import sys
 import tkinter as tk
-from tkinter import filedialog, messagebox, Label, LabelFrame
+from tkinter import filedialog, messagebox
 from pathlib import Path
 import threading
 from datetime import datetime
-from turtle import width
+from PIL import Image, ImageTk #Logo and image handling
 
-#Logo and image handling
-from PIL import Image, ImageTk
-
-repo_root = Path(__file__).resolve().parents[3]
-sys.path.append(str(repo_root))
-
-from microtpct.core import results
 from microtpct.core.pipeline import run_pipeline
-from microtpct.core.match import list_available_engines, user_friendly_engine_name
+from microtpct.core.match import list_available_engines, user_friendly_mapped_engine_names
+
 
 ALGORITHMS = list_available_engines()
-
-# User-friendly mapping of algorithm keys to display names
-ENGINE_NAMES = {key: user_friendly_engine_name(key) for key in ALGORITHMS}
+ENGINE_NAMES = user_friendly_mapped_engine_names()
 ALGORITHMS_DISPLAY = list(ENGINE_NAMES.values())
+
 
 # Color Scheme
 PRIMARY_COLOR = "#2C3E50"

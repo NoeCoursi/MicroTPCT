@@ -1,20 +1,20 @@
-# from .boyer_moore import run_boyer_moore
-# import .grawk_launcher
+from .boyer_moore import run_boyer_moore
 from .match_ahocorasick import run_ahocorasick
-# from .match_ahocorasick_rs import run_ahocorasick_rs
+from .match_ahocorasick_rs import run_ahocorasick_rs
 from .match_find import run_find
 
 MATCHING_ENGINES = {
-    # Exact / fast string matching
     "find": run_find,
-    # "boyer_moore": run_boyer_moore,
+    "boyer_moore": run_boyer_moore,
     "aho": run_ahocorasick,
+    "aho_rs": run_ahocorasick_rs,
+}
 
-    # # Wildcard / ambiguous matching
-    # "aho_rs": run_ahocorasick_rs,
-
-    # External / system-based
-    # "grawk": run_grawk,
+USER_FRIENDLY_ENGINE_NAMES = {
+    "find": "Find",
+    "aho": "Aho-Corasick",
+    "aho_rs": "Aho-Corasick (rust backend)",
+    "bm": "Boyer-Moore"
 }
 
 
@@ -22,15 +22,8 @@ def list_available_engines() -> list[str]:
     """Return the list of available matching engine names."""
     return sorted(MATCHING_ENGINES.keys())
 
-def user_friendly_engine_name(engine_key: str) -> str:
-    """Convert engine key to a more user-friendly name."""
-    name_mappings = {
-        "find": "Find",
-        "aho": "Aho-Corasick",
-        # "aho_rs": "Aho-Corasick RS",
-        # "grawk": "grawk",
-    }
-    return name_mappings.get(engine_key, engine_key)
+def user_friendly_mapped_engine_names() -> dict[str: str]:
+    return USER_FRIENDLY_ENGINE_NAMES
 
 def get_engine(name: str):
     """Return a matching engine by name."""
