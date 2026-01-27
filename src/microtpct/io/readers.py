@@ -12,8 +12,8 @@ class SequenceRole(Enum):
     Class that define role of the readed sequence in a clean way.
     """
 
-    TARGET = "protein"
-    QUERY = "peptide"
+    TARGET = "target"
+    QUERY = "query"
 
 
 # Base reader

@@ -46,7 +46,7 @@ def build_database(
     n = len(sequences)
 
     # Choose DB type and ID prefix
-    if role == SequenceRole.PROTEIN:
+    if role == SequenceRole.TARGET:
         ids = generate_ids("T", n)
         return TargetDB(
             ids=ids,
@@ -55,7 +55,7 @@ def build_database(
             accessions=accessions,
         )
 
-    elif role == SequenceRole.PEPTIDE:
+    elif role == SequenceRole.QUERY:
         ids = generate_ids("Q", n)
         return QueryDB(
             ids=ids,

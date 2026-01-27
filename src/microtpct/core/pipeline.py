@@ -61,12 +61,12 @@ def run_pipeline(
     # Read inputs
     logger.info(f"Reading target file: {target_file}")
     target_inputs = list(
-        read_file(target_file, role=SequenceRole.PROTEIN, format=target_format) #, sep=target_separator) + colomn
+        read_file(target_file, role=SequenceRole.TARGET, format=target_format) #, sep=target_separator) + colomn
     )
 
     logger.info(f"Reading query file: {query_file}")
     query_inputs = list(
-        read_file(query_file, role=SequenceRole.PEPTIDE, format=query_format)#, sep=query_separator)
+        read_file(query_file, role=SequenceRole.QUERY, format=query_format)#, sep=query_separator)
     )
 
     logger.info(f"Loaded {len(target_inputs)} target sequences")
@@ -135,13 +135,13 @@ def run_pipeline(
     # Build databases
 
     logger.info("Building target database")
-    target_db = build_database(target_inputs, role=SequenceRole.PROTEIN)
+    target_db = build_database(target_inputs, role=SequenceRole.TARGET)
 
     if effective_allow_wildcard: # Add special attribute and method if wildcard search enable
         _inject_wildcard_metadata(target_db, target_inputs)
 
     logger.info("Building query database")
-    query_db = build_database(query_inputs, role=SequenceRole.PEPTIDE)
+    query_db = build_database(query_inputs, role=SequenceRole.QUERY)
 
     logger.info(
         f"TargetDB: {target_db.size} sequences "
