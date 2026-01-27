@@ -123,4 +123,3 @@ def run_boyer_moore(target_db: TargetDB, query_db: QueryDB) -> MatchResult:
     return MatchResult(matches=matches)
 
 
-
