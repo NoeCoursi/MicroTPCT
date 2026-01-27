@@ -6,7 +6,7 @@ from multiprocessing import Pool, cpu_count
 from Bio import SeqIO  # type: ignore
 
 from microtpct.core.databases import TargetDB, QueryDB
-from microtpct.core.results import Match, MatchResult
+from microtpct.core.results import MatchResult
 
 BIG_TEXT = None
 POS_TO_TARGET = None
