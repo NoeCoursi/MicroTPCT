@@ -18,6 +18,9 @@ dependencies = [
     "pandas",
     "pyahocorasick",
     "pybmoore",
+    "click",
+    "Pillow",
+    "yaspin"
 ]
 
 authors = [
