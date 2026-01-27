@@ -50,7 +50,7 @@ jobs:
           pip install .
 
       - name: Build App
-        run: pyinstaller --onefile --windowed --icon=assets/logoMu.png src/interfaces/GUI.py
+        run: pyinstaller --onefile --windowed --icon=assets/logoMu.png src/interfaces/gui.py
 
       - uses: actions/upload-artifact@v4
         with:
