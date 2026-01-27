@@ -326,7 +326,7 @@ def usage_callback(ctx: click.Context, param: click.Parameter, value):
     callback=usage_callback,
     help="Install dependencies and exit",
 )
-@click.option("--name", type=str, help="Specify the analysis name")
+@click.option("--job_name", type=str, help="Specify the analysis name")
 
 # OI option
 @click.option("-o", "--output",
@@ -363,7 +363,7 @@ def cli(
     err: bool,
     query_input: str | Path,
     target_input: str | Path,
-    name: str,
+    job_name: str,
     tf: str ,
     qf: str ,
     ts: str ,
@@ -393,7 +393,7 @@ def cli(
         log=log,
         err=err,
         ext=ext,
-        name=name,
+        name=job_name,
         tf=tf,
         qf=qf,
         ts=ts,
