@@ -14,7 +14,14 @@ from pathlib import Path
 import threading
 from datetime import datetime
 
-repo_root = Path(__file__).resolve().parents[3]
+## to be replaced by a from microtpct import ... 
+if getattr(sys, "frozen", False):
+    # Running in PyInstaller bundle
+    repo_root = Path(sys.executable).parent
+else:
+    # Running as normal script
+    repo_root = Path(__file__).resolve().parents[3]
+
 sys.path.append(str(repo_root))
 
 from microtpct.core import results
