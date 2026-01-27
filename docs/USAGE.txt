@@ -24,7 +24,7 @@ Description:
 
 ----------------------------------------------------------------------------------------------------
 
-Options:
+Data processing options:
 
   --aho   (default)    Perform Aho–Corasick based peptide matching
                         -> Highly recommended
@@ -46,6 +46,18 @@ Options:
           microTPCT --allow_wildcard  QUERY_input TARGET_input
                         -> specifying a wildcard is mandatory
 
+Ouput / Input options : 
+
+  -o, --output OUTPUT_PATH/<NEW_FOLDER_NAME> 	
+                       Defines output file path. If not provided,
+                       an output folder will be created in the parent 
+  					           directory of the current working directory.
+  --ext [csv|xlsx]        Specify output file format [csv/xlsx]
+  --tf TEXT               Specify target file format
+  --qf TEXT               Specify query file format
+  --ts TEXT               Specify target file separator (if csv/xlsx/tsv...)
+  --qs TEXT               Specify target file separator (if csv/xlsx/tsv...)
+
 ----------------------------------------------------------------------------------------------------
 
 General options:
@@ -57,7 +69,5 @@ General options:
   --log                Write logs to FILE in RESULTS_FOLDER
   --error              Write errors to FILE in RESULTS_FOLDER
   --usage              Shows detailed usage
-  -o, --output OUTPUT_PATH/<NEW_FOLDER_NAME> 	
-                       Defines output file path. If not provided,
-                       an output folder will be created in the parent 
-  					           directory of the current working directory.
+  --name TEXT          Specify the analysis name
+  
