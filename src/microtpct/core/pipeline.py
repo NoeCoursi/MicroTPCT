@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import List, Literal
 
 from microtpct.io.readers import read_file, SequenceRole
-from microtpct.io.validators import validate_protein_input, validate_peptide_input, validates_wildcards
+from microtpct.io.validators import validate_target_input, validate_query_input, validates_wildcards
 from microtpct.io.converters import build_database
 from microtpct.core.databases import TargetDB
 
@@ -93,11 +93,11 @@ def run_pipeline(
 
     logger.info("Validating target inputs")
 
-    # Validate protein input and return True if object contain wildcards
+    # Validate target input and return True if object contain wildcards
     n_with_wildcards = 0
 
     for obj in target_inputs:
-        wildcards_detected = validate_protein_input(obj, wildcards)
+        wildcards_detected = validate_target_input(obj, wildcards)
 
         if wildcards_detected:
             n_with_wildcards += 1
@@ -127,7 +127,7 @@ def run_pipeline(
 
     logger.info("Validating query inputs")
     for obj in query_inputs:
-        validate_peptide_input(obj)
+        validate_query_input(obj)
 
     logger.info("All inputs are valid")
     

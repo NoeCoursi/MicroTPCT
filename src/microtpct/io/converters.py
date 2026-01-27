@@ -6,7 +6,7 @@ clean core biological sequence databases objects.
 """
 from typing import Iterable
 from microtpct.core.databases import TargetDB, QueryDB
-from microtpct.io.schema import ProteinInput, PeptideInput
+from microtpct.io.schema import TargetInput, QueryInput
 from microtpct.io.readers import SequenceRole
 
 
@@ -23,7 +23,7 @@ def generate_ids(prefix: str, n: int) -> list[str]:
     return [f"{prefix}{i+1:0{width}d}" for i in range(n)]
 
 def build_database(
-    inputs: Iterable[ProteinInput | PeptideInput],
+    inputs: Iterable[TargetInput | QueryInput],
     role: SequenceRole,
 ):
     """

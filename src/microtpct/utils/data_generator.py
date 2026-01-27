@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import pandas as pd
 
-from microtpct.io.schema import ProteinInput, PeptideInput
+from microtpct.io.schema import TargetInput, QueryInput
 from microtpct.io.converters import build_database
 from microtpct.io.readers import SequenceRole
 
@@ -47,10 +47,10 @@ def generate_proteome(
     std_length: float,
     x_rate: float,
     seed: Optional[int] = None,
-) -> List[ProteinInput]:
+) -> List[TargetInput]:
 
     rng = random.Random(seed)
-    proteins: List[ProteinInput] = []
+    proteins: List[TargetInput] = []
 
     for i in range(n_proteins):
         length = max(1, int(rng.gauss(mean_length, std_length)))
@@ -58,7 +58,7 @@ def generate_proteome(
         seq = inject_X(seq, x_rate, rng)
 
         proteins.append(
-            ProteinInput(
+            TargetInput(
                 accession=f"P{i+1:06d}",
                 sequence=seq,
             )
@@ -68,11 +68,11 @@ def generate_proteome(
 
 
 def introduce_redundancy(
-    proteins: List[ProteinInput],
+    proteins: List[TargetInput],
     redundancy_rate: float,
     mutation_rate: float,
     rng: random.Random,
-) -> List[ProteinInput]:
+) -> List[TargetInput]:
     """
     Replace a fraction of proteins by mutated duplicates of other proteins,
     without changing the total number of proteins.
@@ -109,7 +109,7 @@ def introduce_redundancy(
         new_seq = "".join(seq)
         new_acc = f"{parent_acc}_DUP_{dup_version}"
 
-        new_proteins[idx] = ProteinInput(
+        new_proteins[idx] = TargetInput(
             accession=new_acc,
             sequence=new_seq,
         )
@@ -117,17 +117,17 @@ def introduce_redundancy(
     return new_proteins
 
 
-# Peptide generation (match only, no ground truth)
+# Query generation (match only, no ground truth)
 
 def extract_matching_peptides(
-    proteins: List[ProteinInput],
+    proteins: List[TargetInput],
     n_peptides: int,
     mean_length: float,
     std_length: float,
     rng: random.Random,
-) -> List[PeptideInput]:
+) -> List[QueryInput]:
 
-    peptides: List[PeptideInput] = []
+    peptides: List[QueryInput] = []
 
     for i in range(n_peptides):
         prot = rng.choice(proteins)
@@ -141,7 +141,7 @@ def extract_matching_peptides(
 
         pep_seq = replace_X(pep_seq, rng)
 
-        peptide = PeptideInput(
+        peptide = QueryInput(
             accession=f"PEP_MATCH_{i+1:06d}",
             sequence=pep_seq,
         )
@@ -151,7 +151,7 @@ def extract_matching_peptides(
     return peptides
 
 
-# Peptide generation (quasi-match)
+# Query generation (quasi-match)
 
 def mutate_peptide_once(peptide: str, rng: random.Random) -> str:
     pos = rng.randrange(len(peptide))
@@ -160,14 +160,14 @@ def mutate_peptide_once(peptide: str, rng: random.Random) -> str:
 
 
 def generate_quasi_matching_peptides(
-    proteins: List[ProteinInput],
+    proteins: List[TargetInput],
     n_peptides: int,
     mean_length: float,
     std_length: float,
     rng: random.Random,
-) -> List[PeptideInput]:
+) -> List[QueryInput]:
 
-    peptides: List[PeptideInput] = []
+    peptides: List[QueryInput] = []
 
     for i in range(n_peptides):
         prot = rng.choice(proteins)
@@ -183,7 +183,7 @@ def generate_quasi_matching_peptides(
         pep = mutate_peptide_once(pep, rng)
 
         peptides.append(
-            PeptideInput(
+            QueryInput(
                 accession=f"PEP_QUASI_{i+1:06d}",
                 sequence=pep,
             )
@@ -192,7 +192,7 @@ def generate_quasi_matching_peptides(
     return peptides
 
 
-# Peptide generation (non match)
+# Query generation (non match)
 
 def generate_non_matching_peptides(
     proteome_sequences: List[str],
@@ -201,9 +201,9 @@ def generate_non_matching_peptides(
     std_length: float,
     rng: random.Random,
     max_trials: int = 1000,
-) -> List[PeptideInput]:
+) -> List[QueryInput]:
 
-    peptides: List[PeptideInput] = []
+    peptides: List[QueryInput] = []
 
     for i in range(n_peptides):
         for _ in range(max_trials):
@@ -212,7 +212,7 @@ def generate_non_matching_peptides(
 
             if not any(pep in prot for prot in proteome_sequences):
                 peptides.append(
-                    PeptideInput(
+                    QueryInput(
                         accession=f"PEP_RANDOM_{i+1:06d}",
                         sequence=pep,
                     )
@@ -427,7 +427,7 @@ def generate_benchmark_databases(
 
 
 def export_target_fasta(
-    proteins: List[ProteinInput],
+    proteins: List[TargetInput],
     path: str | Path,
     prefix: str = "mtpct",
 ):
@@ -442,7 +442,7 @@ def export_target_fasta(
 
 
 def export_query_xlsx(
-    peptides: List[PeptideInput],
+    peptides: List[QueryInput],
     path: str | Path,
 ):
 
