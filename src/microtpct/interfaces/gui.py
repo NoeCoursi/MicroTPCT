@@ -98,7 +98,7 @@ class MicroTPCTGUI:
         self.logo_label.pack(fill=tk.BOTH, expand=True)
 
         # Charger le logo PNG ici, après la création de left_frame
-        logo_path = "src/microtpct/interfaces/logo.png"
+        logo_path = "src/microtpct/assets/logoMu.png"
         logo_img = Image.open(logo_path)
 
         # Optionnel : créer l'image aux dimensions exactes de la frame pour éviter les resize dynamiques
