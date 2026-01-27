@@ -31,3 +31,18 @@ def user_friendly_engine_name(engine_key: str) -> str:
         # "grawk": "grawk",
     }
     return name_mappings.get(engine_key, engine_key)
+
+def get_engine(name: str):
+    """Return a matching engine by name."""
+    if name not in MATCHING_ENGINES:
+        raise ValueError(
+            f"Unknown matching engine '{name}'. "
+            f"Available engines: {list_available_engines()}"
+        )
+    return MATCHING_ENGINES[name]
+
+__all__ = [
+    "MATCHING_ENGINES",
+    "list_available_engines",
+    "get_engine",
+]

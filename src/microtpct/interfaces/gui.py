@@ -108,7 +108,7 @@ class MicroTPCTGUI:
                             font=("Helvetica", 11, "bold"),
                             fg=TEXT_COLOR, bg=BG_COLOR,
                             relief=tk.RIDGE, borderwidth=0,
-                            width=200, height=150)
+                            width=250, height=250)
         image_frame.pack(fill=tk.NONE, expand=False, pady=5)
 
         self.logo_label = tk.Label(image_frame, bg=BG_COLOR)
@@ -119,7 +119,7 @@ class MicroTPCTGUI:
         logo_img = Image.open(logo_path)
 
         # Optionnel : créer l'image aux dimensions exactes de la frame pour éviter les resize dynamiques
-        logo_img = logo_img.resize((200, 150), Image.LANCZOS)
+        logo_img = logo_img.resize((200, 200), Image.LANCZOS)
 
         self.tk_logo = ImageTk.PhotoImage(logo_img)
         self.logo_label.config(image=self.tk_logo)
