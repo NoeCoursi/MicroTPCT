@@ -20,9 +20,9 @@ dependencies = [
     "pybmoore",
     "click",
     "Pillow",
-    "yaspin,
-    openpyxl,
-    xlsxwriter"
+    "yaspin",
+    "openpyxl",
+    "xlsxwriter"
 ]
 
 authors = [
