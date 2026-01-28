@@ -26,8 +26,10 @@ Description:
 
 Data processing options:
 
-  --aho   (default)    Perform Aho–Corasick based peptide matching
-                        -> Highly recommended
+  --aho                Perform Aho–Corasick based peptide matching
+  --ahors (default)    Perform Aho–Corasick (rust backend) based 
+											peptide matching 
+											   -> Highly recommended
   --bm                 Perform Boyer-Moore based peptide matching
   --ag                 Perform [AWK - GREP] based peptide matching
   --blast              Perform local BLAST-based peptide matching

@@ -16,7 +16,7 @@ USER_FRIENDLY_ENGINE_NAMES = {
     "find": "Find",
     "aho": "Aho-Corasick",
     "aho_rs": "Aho-Corasick (rust backend)",
-    "bm": "Boyer-Moore"
+    "boyer_moore": "Boyer-Moore"
 }
 
 
