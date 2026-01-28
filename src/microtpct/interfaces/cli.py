@@ -15,6 +15,7 @@ from yaspin import yaspin #type: ignore
 from yaspin.spinners import Spinners #type: ignore
 
 from microtpct.core.pipeline import run_pipeline
+from microtpct.core.match import DEFAULT_ENGINE
 
 # Message helpers
 def echo_info(msg: str):
@@ -31,7 +32,7 @@ class PipelineRunner:
         self,
         query_input,
         target_input,
-        algo="aho",
+        algo=DEFAULT_ENGINE,
         wildcards=(),
         output=None,
         log=None,
@@ -126,7 +127,7 @@ class PipelineRunner:
         selected = [name for name, active in algo_flags if active]
         if len(selected) > 1:
             raise click.UsageError("Please select only one algorithm")
-        return selected[0] if selected else "aho"
+        return selected[0] if selected else "ahors"
 
     @staticmethod
     def _timestamp():
@@ -293,7 +294,8 @@ def usage_callback(ctx: click.Context, param: click.Parameter, value):
     context_settings=dict(ignore_unknown_options=False, allow_extra_args=True)
 )
 # Algorithm choice
-@click.option("--aho", is_flag=True, help="Use Aho–Corasick algorithm (default)")
+@click.option("--ahors", is_flag=True, help="Use Aho–Corasick algorithm rust backend (default)")
+@click.option("--aho", is_flag=True, help="Use Aho–Corasick algorithm")
 @click.option("--bm", is_flag=True, help="Use Boyer-Moore algorithm")
 @click.option("--ag", is_flag=True, help="Use AWK-GREP algorithm")
 @click.option("--blast", is_flag=True, help="Use BLAST algorithm")
@@ -351,6 +353,7 @@ def usage_callback(ctx: click.Context, param: click.Parameter, value):
 def cli(
     ctx: click.Context,
     aho: bool,
+    ahors: bool,
     bm: bool,
     ag: bool,
     blast: bool,
@@ -378,7 +381,7 @@ def cli(
     # ----------------------------
     # Determine algorithm
     # ----------------------------
-    algo_flags = [("aho", aho), ("bm", bm), ("ag", ag), ("blast", blast), ("regex", regex), ("find", find)]
+    algo_flags = [("aho", aho), ("ahors", ahors), ("bm", bm), ("ag", ag), ("blast", blast), ("regex", regex), ("find", find)]
     algo = PipelineRunner.validate_algo_flags(algo_flags)
 
     # ----------------------------
