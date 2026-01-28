@@ -26,6 +26,7 @@ class TargetInput(SequenceInput):
     """Contract for a target input."""
     
     accession: str
+    wildcard_positions: list[int] = field(default_factory=list, repr=False)  # Positions of wildcards in the sequence
 
 
 @dataclass(frozen=True)
