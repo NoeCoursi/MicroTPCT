@@ -98,33 +98,3 @@ class QueryDB(SequenceDB):
     Contains peptide sequences used as matching patterns.
     """
     pass
-
-
-@dataclass
-class TargetDB(SequenceDB):
-    """
-    Target protein database.
-
-    Contains protein sequences used as matching targets.
-
-    Attributes
-    ----------
-    wildcard_positions : list[list[int]] | None
-        For each sequence, positions of wildcard characters.
-        If None, will be initialized to empty lists.
-    """
-
-    wildcard_positions: list[list[int]] | None = None
-
-    def __post_init__(self):
-        super().__post_init__()
-
-        if self.wildcard_positions is None:
-            self.wildcard_positions = [[] for _ in range(self.size)]
-        elif len(self.wildcard_positions) != self.size:
-            raise ValueError("wildcard_positions must have same length as sequences")
-
-    def to_dataframe(self) -> pd.DataFrame:
-        df = super().to_dataframe()
-        df["wildcard_positions"] = self.wildcard_positions
-        return df

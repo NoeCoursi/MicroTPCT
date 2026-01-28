@@ -37,15 +37,11 @@ def build_database(
     sequences = []
     ambiguous = []
     accessions = []
-    if role == SequenceRole.PROTEIN:
-        wildcard_positions = []
 
     for obj in inputs:
         sequences.append(obj.sequence)
         ambiguous.append(il_to_j(obj.sequence))
         accessions.append(obj.accession)
-        if role == SequenceRole.PROTEIN:
-            wildcard_positions.append(obj.wildcard_positions)
 
     n = len(sequences)
 
@@ -56,8 +52,7 @@ def build_database(
             ids=ids,
             sequences=sequences,
             ambiguous_il_sequences=ambiguous,
-            accessions=accessions,
-            wildcard_positions=wildcard_positions
+            accessions=accessions
         )
 
     elif role == SequenceRole.QUERY:
