@@ -98,7 +98,8 @@ class MicroTPCTGUI:
         self.logo_label.pack(fill=tk.BOTH, expand=True)
 
         # Charger le logo PNG ici, après la création de left_frame
-        logo_path = "../../../assets/logo0.png"
+        #logo_path = "../../../assets/logo0.png"
+        logo_path = self.resource_path("../../../assets/logo0.png")
         logo_img = Image.open(logo_path)
 
         logo_img = logo_img.resize((270, 270), Image.LANCZOS)
@@ -464,6 +465,14 @@ class MicroTPCTGUI:
             messagebox.showerror("Error", "Enter filename")
             return False
         return True
+
+    def resource_path(self, relative_path):
+        import os, sys
+        if hasattr(sys, '_MEIPASS'):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(base_path, relative_path)
 
 
 def main():
