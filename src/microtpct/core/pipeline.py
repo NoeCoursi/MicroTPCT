@@ -17,7 +17,7 @@ from microtpct.io.converters import build_database
 from microtpct.core.databases import TargetDB
 
 
-from microtpct.core.match import get_engine
+from microtpct.core.match import get_engine, DEFAULT_ENGINE
 from microtpct.core.match.wildcards_matcher import run_wildcard_match
 
 from microtpct.io.writers import write_outputs
@@ -48,7 +48,7 @@ def run_pipeline(
 
     allow_wildcard: bool = True,
     wildcards: str | List[str] = "X",
-    matching_engine: str = "aho",
+    matching_engine: str = DEFAULT_ENGINE,
 ):
     """
     Run the complete MicroTPCT pipeline.

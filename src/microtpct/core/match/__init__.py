@@ -10,6 +10,8 @@ MATCHING_ENGINES = {
     "aho_rs": run_ahocorasick_rs,
 }
 
+DEFAULT_ENGINE = "aho_rs"
+
 USER_FRIENDLY_ENGINE_NAMES = {
     "find": "Find",
     "aho": "Aho-Corasick",
@@ -18,8 +20,13 @@ USER_FRIENDLY_ENGINE_NAMES = {
 }
 
 
-def list_available_engines() -> list[str]:
+def list_available_engines(**kwargs) -> list[str]:
     """Return the list of available matching engine names."""
+
+    if kwargs.get("add_blast") is True :
+        from .match_blast import run_blast
+        MATCHING_ENGINES["blast"] = run_blast
+
     return sorted(MATCHING_ENGINES.keys())
 
 def user_friendly_mapped_engine_names() -> dict[str: str]:
@@ -36,6 +43,9 @@ def get_engine(name: str):
 
 __all__ = [
     "MATCHING_ENGINES",
+    "DEFAULT_ENGINE",
+    "USER_FRIENDLY_ENGINE_NAMES",
+    "user_friendly_mapped_engine_names"
     "list_available_engines",
     "get_engine",
 ]

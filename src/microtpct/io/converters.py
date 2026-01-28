@@ -52,7 +52,7 @@ def build_database(
             ids=ids,
             sequences=sequences,
             ambiguous_il_sequences=ambiguous,
-            accessions=accessions,
+            accessions=accessions
         )
 
     elif role == SequenceRole.QUERY:

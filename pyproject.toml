@@ -10,6 +10,19 @@ description = "MicroTPCT: Microproteotypicity of Peptides Control Tool"
 readme = "README.md"
 requires-python = ">=3.12"
 
+dependencies = [
+    "ahocorasick_rs",
+    "Bio",
+    "biopython",
+    "microtpct",
+    "pandas",
+    "pyahocorasick",
+    "pybmoore",
+    "click",
+    "Pillow",
+    "yaspin"
+]
+
 authors = [
     {name = "Ambre Bordas", email = "ambre@example.com"},
     {name = "Meredith Biteau", email = "meredith@example.com"},
