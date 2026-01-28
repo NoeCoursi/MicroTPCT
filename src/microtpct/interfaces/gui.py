@@ -63,7 +63,7 @@ class MicroTPCTGUI:
         header_frame = tk.Frame(root, bg=PRIMARY_COLOR, height=60)
         header_frame.grid(row=0, column=0, columnspan=3, sticky="ew", padx=0, pady=0)
         
-        title_label = tk.Label(header_frame, text="MicroTPCT Pipeline", 
+        title_label = tk.Label(header_frame, text="MicroTPCT", 
                                font=("Helvetica", 24, "bold"), 
                                fg=LIGHT_TEXT, bg=PRIMARY_COLOR)
         title_label.pack(pady=10)
