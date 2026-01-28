@@ -28,7 +28,7 @@ jobs:
           pip install .
 
       - name: Build EXE
-        run: pyinstaller --onefile --windowed --name MicroTPCT --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
+        run: pyinstaller --onefile --windowed --name MicroTPCT --icon=assets/logo.png src/microtpct/interfaces/gui.py
 
       - uses: actions/upload-artifact@v4
         with:
@@ -63,7 +63,7 @@ jobs:
           pip install .
 
       - name: Build App
-        run: pyinstaller --onefile --windowed --name MicroTPCT --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
+        run: pyinstaller --onefile --windowed --name MicroTPCT --icon=assets/logo.png src/microtpct/interfaces/gui.py
 
       - uses: actions/upload-artifact@v4
         with:
@@ -104,7 +104,7 @@ jobs:
           pip install .
 
       - name: Build binary
-        run: pyinstaller --onefile --name MicroTPCT --icon=assets/logoMu.png src/microtpct/interfaces/gui.py
+        run: pyinstaller --onefile --name MicroTPCT --icon=assets/logo.png src/microtpct/interfaces/gui.py
 
       - name: Prepare AppDir
         run: |
@@ -128,7 +128,7 @@ jobs:
           cp dist/MicroTPCT deb/MicroTPCT/usr/bin/MicroTPCT
 
           # Copy icon
-          cp assets/logoMu.png deb/MicroTPCT/usr/share/icons/hicolor/256x256/apps/MicroTPCT.png
+          cp assets/logo.png deb/MicroTPCT/usr/share/icons/hicolor/256x256/apps/MicroTPCT.png
 
           # Desktop file
           cat > deb/MicroTPCT/usr/share/applications/microtpct.desktop << 'EOF'
@@ -170,7 +170,7 @@ jobs:
           EOF
 
           # Copy real icon
-          cp assets/logoMu.png AppDir/MicroTPCT.png
+          cp assets/logo.png AppDir/MicroTPCT.png
 
       - name: Build AppImage
         run: |
