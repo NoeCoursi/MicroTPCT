@@ -42,7 +42,7 @@ class MicroTPCTGUI:
         self.root = root
         self.root.title("MicroTPCT")
         self.root.configure(bg=BG_COLOR)
-        self.root.minsize(900, 500)
+        self.root.minsize(900, 400)
 
         # Store matching results for saving
         self.matching_results = None
@@ -56,7 +56,7 @@ class MicroTPCTGUI:
         self.wildcard_choice = tk.StringVar(value="X")
         self.save_excel = tk.BooleanVar(value=True) # Default : save as Excel
         self.save_csv = tk.BooleanVar(value=False)
-        self.include_timestamp = tk.BooleanVar(value=True) # Default : include timestamp in filename
+        #self.include_timestamp = tk.BooleanVar(value=True) # Default : include timestamp in filename
         self.filename_custom = tk.StringVar(value="results") 
 
         # --- HEADER ---
@@ -91,7 +91,7 @@ class MicroTPCTGUI:
                             font=("Helvetica", 11, "bold"),
                             fg=TEXT_COLOR, bg=BG_COLOR,
                             relief=tk.RIDGE, borderwidth=0,
-                            width=200, height=150)
+                            width=250, height=250)
         image_frame.pack(fill=tk.NONE, expand=False, pady=5)
 
         self.logo_label = tk.Label(image_frame, bg=BG_COLOR)
@@ -101,8 +101,7 @@ class MicroTPCTGUI:
         logo_path = "../../../assets/logo0.png"
         logo_img = Image.open(logo_path)
 
-        # Optionnel : créer l'image aux dimensions exactes de la frame pour éviter les resize dynamiques
-        logo_img = logo_img.resize((200, 150), Image.LANCZOS)
+        logo_img = logo_img.resize((270, 270), Image.LANCZOS)
 
         self.tk_logo = ImageTk.PhotoImage(logo_img)
         self.logo_label.config(image=self.tk_logo)
@@ -170,8 +169,8 @@ class MicroTPCTGUI:
                                  width=20, font=("Helvetica", 9))
         filename_entry.grid(row=4, column=1, padx=5, pady=5)
 
-        tk.Checkbutton(save_frame, text="Add Timestamp", variable=self.include_timestamp,
-                      font=("Helvetica", 9), bg=BG_COLOR, fg=TEXT_COLOR).grid(row=5, column=0, columnspan=2, sticky="w", pady=3)
+        #tk.Checkbutton(save_frame, text="Add Timestamp", variable=self.include_timestamp,
+                      #font=("Helvetica", 9), bg=BG_COLOR, fg=TEXT_COLOR).grid(row=5, column=0, columnspan=2, sticky="w", pady=3)
 
         # --- RIGHT COLUMN: Actions ---
         right_frame = tk.LabelFrame(root, text="Actions", padx=15, pady=15,
@@ -329,17 +328,31 @@ class MicroTPCTGUI:
                 key for key, name in ENGINE_NAMES.items() if name == selected_display_name
             )
 
-            results = run_pipeline(
+            if self.save_csv.get():
+                output_format = "csv"
+            else:
+                output_format = "excel"
+
+            print(self.wildcard_choice.get())
+
+            result_file, stats_file = run_pipeline(
                 target_file=Path(self.proteome_path.get()),
                 query_file=Path(self.peptide_path.get()),
+
                 output_path=Path(self.output_dir.get()),
+                output_format=output_format,
+
                 matching_engine=matching_engine_key,
-                wildcards=self.wildcard_choice.get() if self.wildcard_enabled.get() else None,
-            )
-            if results is None:
+                wildcards=self.wildcard_choice.get() if self.wildcard_choice.get() else None,
+
+                analysis_name = self.filename_custom.get(),
+                allow_wildcard = self.wildcard_enabled.get()
+                )
+
+            if result_file and stats_file:
                 messagebox.showinfo(f"Info", f"Pipeline completed, results saved automatically to {self.output_dir.get()}.")
             else:
-                self.matching_results = results
+                self.matching_results = result_file
             
             self.status_label.config(text="Status: Complete ✓", fg=SUCCESS_COLOR)
             
@@ -349,8 +362,7 @@ class MicroTPCTGUI:
         finally:
             self.run_btn.config(state=tk.NORMAL)
 
-
-    def _save_results(self, matching_results):
+    def _save_results(self, result_file, stats_file):
         """
         Convert matching results to requested file formats and save.
         
@@ -367,38 +379,36 @@ class MicroTPCTGUI:
         Raises:
             Exception: If conversion or saving fails.
         """
-        import pandas as pd
-        
         output_path = Path(self.output_dir.get())
         filename = self.filename_custom.get()
 
-        if self.include_timestamp.get():
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{filename}_{timestamp}"
+        # if self.include_timestamp.get():
+        #     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        #     filename = f"{filename}_{timestamp}"
         
+        # try:
+        #     # Convert results to DataFrame
+        #     if hasattr(matching_results, 'to_dataframe'):
+        #         df = matching_results.to_dataframe()
+        #     else:
+        #         df = pd.DataFrame([vars(matching_results)])
         try:
-            # Convert results to DataFrame
-            if hasattr(matching_results, 'to_dataframe'):
-                df = matching_results.to_dataframe()
-            else:
-                df = pd.DataFrame([vars(matching_results)])
+            saved_files = [result_file, stats_file]
 
-            saved_files = []
+        #     if self.save_excel.get():
+        #         file_xlsx = output_path / f"{filename}.xlsx"
+        #         df.to_excel(file_xlsx, index=False)
+        #         saved_files.append(file_xlsx.name)
 
-            if self.save_excel.get():
-                file_xlsx = output_path / f"{filename}.xlsx"
-                df.to_excel(file_xlsx, index=False)
-                saved_files.append(file_xlsx.name)
-
-            if self.save_csv.get():
-                file_csv = output_path / f"{filename}.csv"
-                df.to_csv(file_csv, index=False)
-                saved_files.append(file_csv.name)
+        #     if self.save_csv.get():
+        #         file_csv = output_path / f"{filename}.csv"
+        #         df.to_csv(file_csv, index=False)
+        #         saved_files.append(file_csv.name)
 
             self.status_label.config(
                 text=f"Status: Saved to {', '.join(saved_files)}",
                 fg=SUCCESS_COLOR
-            )
+                )
 
         except Exception as e:
             raise Exception(f"Could not save results: {e}")

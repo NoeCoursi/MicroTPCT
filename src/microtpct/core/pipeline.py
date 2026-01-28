@@ -222,7 +222,7 @@ def run_pipeline(
     # Done
     logger.info("Pipeline finished successfully")
 
-
+    return result_file, stats_file
 
 def _inject_wildcard_metadata(target_db, target_inputs):
     contains_wildcard = [
