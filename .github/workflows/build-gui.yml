@@ -63,7 +63,7 @@ jobs:
           pip install .
 
       - name: Build App
-        run: pyinstaller --onefile --windowed --name MicroTPCT --icon=assets/logo.png --add-data "assets;assets "src/microtpct/interfaces/gui.py
+        run: pyinstaller --onefile --windowed --name MicroTPCT --icon=assets/logo.png --add-data "assets:assets "src/microtpct/interfaces/gui.py
 
       - uses: actions/upload-artifact@v4
         with:
