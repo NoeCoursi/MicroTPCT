@@ -21,8 +21,6 @@ A computational toolkit designed to assess the proteotypicity of candidate micro
 - [Installation](#installation)
     - [Requirements (Python version, dependencies, OS)](#requirements-python-version-dependencies-os)
     - [Install from source](#install-from-source)
-    - [Editable mode for developers](#editable-mode-for-developers)
-        - [`pip install -e .`](#pip-install--e-)
     - [Install GUI](#install-gui)
         - [Windows](#windows)
         - [macOS](#macos)
@@ -40,10 +38,6 @@ A computational toolkit designed to assess the proteotypicity of candidate micro
 - [Validation and Benchmarks](#validation-and-benchmarks)
 - [License](#license)
 - [Authors and Affiliations](#authors-and-affiliations)
-
-
-
-
 
 
 
