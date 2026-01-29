@@ -4,6 +4,51 @@
 
 A computational toolkit designed to assess the proteotypicity of candidate microprotein peptides and resolve ambiguities in extended proteome analyses.
 
+## Content
+
+- [Description](#description)
+- [Context](#context)
+    - [Microproteins and alternative proteomes](#microproteins-and-alternative-proteomes)
+    - [Microproteomics workflows and limitations](#microproteomics-workflows-and-limitations)
+    - [False positives in two-step search strategies](#false-positives-in-two-step-search-strategies)
+- [Features](#features)
+    - [Short-query / long-target matching](#short-query--long-target-matching)
+    - [Biological sequence-aware matching](#biological-sequence-aware-matching)
+    - [Unified result model](#unified-result-model)
+    - [Multiple user interfaces](#multiple-user-interfaces)
+    - [Performance evaluation](#performance-evaluation)
+- [Repository organization](#repository-organization)
+- [Installation](#installation)
+    - [Requirements (Python version, dependencies, OS)](#requirements-python-version-dependencies-os)
+    - [Install from source](#install-from-source)
+    - [Editable mode for developers](#editable-mode-for-developers)
+        - [`pip install -e .`](#pip-install--e-)
+    - [Install GUI](#install-gui)
+        - [Windows](#windows)
+        - [macOS](#macos)
+        - [Linux](#linux)
+- [Quick Start](#quick-start)
+    - [CLI](#cli)
+    - [GUI](#gui)
+- [Core concepts](#core-concepts)
+    - [Queries and targets](#queries-and-targets)
+    - [QueryDB and TargetDB](#querydb-and-targetdb)
+    - [Matching semantics: strict vs wildcard-aware](#matching-semantics-strict-vs-wildcard-aware)
+    - [Matches and result aggregation](#matches-and-result-aggregation)
+    - [Microproteotypicity assessment](#microproteotypicity-assessment)
+    - [Pipeline overview](#pipeline-overview)
+- [Validation and Benchmarks](#validation-and-benchmarks)
+- [License](#license)
+- [Authors and Affiliations](#authors-and-affiliations)
+
+
+
+
+
+
+
+
+
 ## Description
 
 MicroTPCT is a framework that addresses the classical short-pattern / long-text matching problem supporting exact and wildcard-based matching with a unified result model.
